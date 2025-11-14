@@ -30,8 +30,10 @@ RUN git clone https://gerrit.o-ran-sc.org/r/ric-plt/lib/rmr && \
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 # Install Python dependencies
+# Install ricsdl 3.0.2 first to ensure compatibility with redis 4.x
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir ricsdl==3.0.2 && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/
@@ -54,10 +56,6 @@ EXPOSE 8080
 ENV PYTHONUNBUFFERED=1
 ENV RMR_SEED_RT=/app/config/rmr-routes.txt
 ENV RMR_SRC_ID=traffic-steering
-
-# Health check script
-COPY --chown=xapp:xapp health_check.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/health_check.sh
 
 # Run the xApp
 CMD ["python3", "/app/src/traffic_steering.py"]

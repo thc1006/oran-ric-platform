@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traffic-steering-config
+  namespace: ricxapp
+data:
+  rmr-routes.txt: |
+    # RMR Routing Table for Traffic Steering xApp
+    newrt|start
+    # RIC Subscription Messages
+    rte|12010|service-ricplt-e2term-rmr-alpha.ricplt:4560
+    rte|12011|traffic-steering.ricxapp:4560
+    rte|12012|service-ricplt-e2term-rmr-alpha.ricplt:4560
+    rte|12013|traffic-steering.ricxapp:4560
+    # RIC Indication Messages
+    rte|12050|traffic-steering.ricxapp:4560
+    # RIC Control Messages
+    rte|12040|service-ricplt-e2term-rmr-alpha.ricplt:4560
+    rte|12041|traffic-steering.ricxapp:4560
+    # A1 Policy Messages
+    rte|20010|traffic-steering.ricxapp:4560
+    rte|20011|service-ricplt-a1mediator-rmr.ricplt:4562
+    newrt|end
+
+  config.json: |
+    {
+      "xapp_name": "traffic-steering",
+      "version": "1.0.0",
+      "handover": {
+        "rsrp_threshold": -100.0,
+        "rsrq_threshold": -15.0,
+        "throughput_threshold": 10.0,
+        "load_threshold": 0.8
+      },
+      "logging": {
+        "level": "INFO"
+      }
+    }

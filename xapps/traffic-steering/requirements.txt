@@ -1,10 +1,11 @@
 # O-RAN xApp Framework
-ricxappframe==3.2.1
+ricxappframe==3.2.2
+ricsdl==3.0.2       # 使用 ricsdl 3.0.2 搭配其指定的 redis 4.1.1
 mdclogpy==1.1.4
 
-# Redis for SDL
-redis==5.0.1
-hiredis==2.3.2
+# Data Storage
+redis==4.1.1        # ricsdl 3.0.2 requires redis==4.1.1
+hiredis==2.0.0
 
 # REST API Framework
 flask==3.0.0

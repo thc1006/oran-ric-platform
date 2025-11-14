@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-steering
+  namespace: ricxapp
+  labels:
+    app: traffic-steering
+    xapp: traffic-steering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-steering
+  template:
+    metadata:
+      labels:
+        app: traffic-steering
+        xapp: traffic-steering
+    spec:
+      containers:
+      - name: traffic-steering
+        image: localhost:5000/xapp-traffic-steering:1.0.0
+        imagePullPolicy: Always
+        env:
+        - name: RMR_SEED_RT
+          value: "/app/config/rmr-routes.txt"
+        - name: RMR_SRC_ID
+          value: "traffic-steering"
+        - name: RMR_RTG_SVC
+          value: "service-ricplt-rtmgr-rmr.ricplt:4561"
+        - name: SDL_NAMESPACE
+          value: "traffic-steering"
+        - name: LOG_LEVEL
+          value: "INFO"
+        ports:
+        - name: rmr-data
+          containerPort: 4560
+          protocol: TCP
+        - name: rmr-route
+          containerPort: 4561
+          protocol: TCP
+        - name: http-api
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        livenessProbe:
+          httpGet:
+            path: /ric/v1/health/alive
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ric/v1/health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: config-volume
+        configMap:
+          name: traffic-steering-config

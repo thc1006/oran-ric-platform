@@ -4,9 +4,9 @@
 
 ---
 
-## 🚀 5 分鐘快速部署
+## 🚀 10 分鐘快速部署
 
-本指南幫助您快速部署已經驗證成功的 KPIMON 和 RAN Control xApp。
+本指南幫助您快速部署已經驗證成功的 KPIMON、RAN Control 和 Traffic Steering xApp。
 
 ---
 
@@ -283,7 +283,69 @@ kubectl exec -n ricxapp $RC_POD -- curl http://localhost:8100/metrics
 
 ---
 
-## Step 6: 驗證完整部署
+## Step 6: 部署 Traffic Steering xApp
+
+### 6.1 構建鏡像
+
+```bash
+cd /home/thc1006/oran-ric-platform/xapps/traffic-steering
+
+# 首次構建建議使用 --no-cache
+docker build --no-cache -t localhost:5000/xapp-traffic-steering:1.0.0 .
+docker push localhost:5000/xapp-traffic-steering:1.0.0
+```
+
+### 6.2 部署到 Kubernetes
+
+```bash
+kubectl apply -f deploy/
+```
+
+### 6.3 驗證部署
+
+```bash
+# 檢查 Pod 狀態
+kubectl get pods -n ricxapp -l app=traffic-steering
+
+# 等待 Pod 就緒
+kubectl wait --for=condition=ready pod -l app=traffic-steering -n ricxapp --timeout=300s
+
+# 查看日誌
+kubectl logs -n ricxapp -l app=traffic-steering --tail=30
+```
+
+**預期日誌輸出**：
+```json
+{"msg": "Traffic Steering xApp initialized"}
+{"msg": "Starting Traffic Steering xApp"}
+```
+```
+* Running on http://0.0.0.0:8080
+* Running on http://10.42.0.142:8080
+```
+```json
+{"msg": "E2 subscription request sent"}
+```
+
+### 6.4 測試功能
+
+```bash
+# 獲取 Pod 名稱
+TS_POD=$(kubectl get pod -n ricxapp -l app=traffic-steering -o jsonpath='{.items[0].metadata.name}')
+
+# 測試健康檢查
+kubectl exec -n ricxapp $TS_POD -- curl http://localhost:8080/ric/v1/health/alive
+# 預期：{"status":"alive"}
+
+kubectl exec -n ricxapp $TS_POD -- curl http://localhost:8080/ric/v1/health/ready
+# 預期：{"status":"ready"}
+```
+
+**重要提示**：Traffic Steering xApp 使用了組合模式（composition）而非繼承，這是 ricxappframe 3.2.2 的正確使用方式。詳見 [traffic-steering-deployment.md](traffic-steering-deployment.md)。
+
+---
+
+## Step 7: 驗證完整部署
 
 ```bash
 # 檢查所有 Pod

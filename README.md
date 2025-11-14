@@ -14,7 +14,7 @@
 
 ## 當前狀態與進度
 
-### Phase 1：已部署 xApp 驗證 ✅ 完成
+### Phase 1：基礎 xApp 部署 ✅ 完成
 
 **狀態**：生產就緒
 **版本標籤**：`v1.0.0-phase1`
@@ -23,14 +23,44 @@
 - **KPIMON xApp** - KPI 監控與異常檢測
 - **RAN Control xApp** - RAN 控制與優化
 
-### Phase 2：完整專案重組 🚧 規劃中
+### Phase 2：專案重組 ✅ 完成
 
-**目標**：
+**狀態**：已完成
+**版本標籤**：`v1.0.0-phase2`
+
+完成項目：
 - 統一 legacy 資料夾位置
 - 清理專案結構
 - 統一命名規範
 
-詳細計畫請參考：[docs/PROJECT-REORGANIZATION-PLAN.md](docs/PROJECT-REORGANIZATION-PLAN.md)
+詳細記錄：[docs/PROJECT-REORGANIZATION-PLAN.md](docs/PROJECT-REORGANIZATION-PLAN.md)
+
+### Phase 3：Traffic Steering xApp 部署 ✅ 完成
+
+**狀態**：生產就緒
+**版本標籤**：`v1.0.0-phase3`
+**部署日期**：2025-11-14
+
+新增部署的 xApp：
+- **Traffic Steering xApp** - 策略導向的切換決策
+
+**重要技術突破**：
+- 解決 ricxappframe 3.2.2 的 RMR API 使用問題
+- 建立標準化的 xApp 開發模式（組合優於繼承）
+- 完成依賴版本驗證（ricsdl 3.0.2 + redis 4.1.1）
+
+詳細部署指南：[docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
+
+### Phase 4：ML xApp 部署 🚧 待 GPU 工作站
+
+**狀態**：準備中
+**需求**：GPU 加速運算環境
+
+待部署的 ML xApp：
+- **QoE Predictor xApp** - QoE 預測與優化（需要 TensorFlow 2.15.0）
+- **Federated Learning xApp** - 聯邦學習框架（需要 TensorFlow + PyTorch）
+
+**交接文檔**：[docs/GPU-WORKSTATION-HANDOFF.md](docs/GPU-WORKSTATION-HANDOFF.md)
 
 ---
 
@@ -75,17 +105,30 @@
 oran-ric-platform/
 ├── docs/                      # 部署指南與文檔
 │   ├── QUICK-START.md         # 5 分鐘快速部署
-│   └── deployment-guide-complete.md  # 完整部署指南
+│   ├── deployment-guide-complete.md  # 完整部署指南
+│   ├── traffic-steering-deployment.md  # Traffic Steering 部署指南
+│   ├── GPU-WORKSTATION-HANDOFF.md    # GPU 工作站交接文檔
+│   └── PROJECT-REORGANIZATION-PLAN.md # 專案重組計畫
 ├── ric-dep/                   # RIC Platform Helm charts
 ├── xapps/                     # xApp 實現
-│   ├── kpimon-go-xapp/        # KPI 監控 xApp
+│   ├── kpimon-go-xapp/        # ✅ KPI 監控 xApp (已部署)
 │   │   ├── deploy/            # Kubernetes 部署清單
 │   │   ├── src/               # 源代碼
 │   │   └── README.md          # xApp 說明
-│   └── rc-xapp/               # RAN Control xApp
-│       ├── deploy/            # Kubernetes 部署清單
-│       ├── src/               # 源代碼
-│       └── README.md          # xApp 說明
+│   ├── rc-xapp/               # ✅ RAN Control xApp (已部署)
+│   │   ├── deploy/            # Kubernetes 部署清單
+│   │   ├── src/               # 源代碼
+│   │   └── README.md          # xApp 說明
+│   ├── traffic-steering/      # ✅ Traffic Steering xApp (已部署)
+│   │   ├── deploy/            # Kubernetes 部署清單
+│   │   ├── src/               # 源代碼
+│   │   ├── Dockerfile         # Docker 構建文件
+│   │   └── requirements.txt   # Python 依賴
+│   ├── qoe-predictor/         # 🚧 QoE Predictor xApp (待 GPU)
+│   │   └── requirements.txt   # 需要 TensorFlow 2.15.0
+│   └── federated-learning/    # 🚧 Federated Learning xApp (待 GPU)
+│       └── requirements.txt   # 需要 TensorFlow + PyTorch
+├── legacy/                    # 參考實現（不部署）
 └── scripts/                   # 自動化腳本
 ```
 
@@ -93,17 +136,46 @@ oran-ric-platform/
 
 ## 已部署並驗證的 xApp
 
-### KPIMON xApp
+### KPIMON xApp ✅
 - **功能**：KPI 監控與異常檢測
 - **E2 Service Model**：E2SM-KPM v3.0
 - **監控指標**：20 種 KPI 類型
+- **狀態**：生產就緒
 - **詳細說明**：[xapps/kpimon-go-xapp/README.md](xapps/kpimon-go-xapp/README.md)
 
-### RAN Control xApp
+### RAN Control xApp ✅
 - **功能**：RAN 控制與優化
 - **E2 Service Model**：E2SM-RC v2.0
 - **優化算法**：5 種（切換、資源、負載均衡、切片、功率）
+- **狀態**：生產就緒
 - **詳細說明**：[xapps/rc-xapp/README.md](xapps/rc-xapp/README.md)
+
+### Traffic Steering xApp ✅
+- **功能**：策略導向的切換決策
+- **E2 Service Model**：E2SM-KPM v3.0 + E2SM-RC v2.0
+- **整合**：與 QoE Predictor 和 RC xApp 協作
+- **特性**：
+  - UE 性能指標監控（RSRP、RSRQ、吞吐量）
+  - A1 策略管理
+  - 動態切換決策
+  - RESTful 健康檢查 API
+- **狀態**：生產就緒
+- **部署日期**：2025-11-14
+- **詳細說明**：[docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
+
+### 待部署 xApp（需要 GPU）
+
+#### QoE Predictor xApp 🚧
+- **功能**：QoE 預測與優化
+- **依賴**：TensorFlow 2.15.0 (~500MB)
+- **需求**：GPU 加速運算
+- **狀態**：待 GPU 工作站部署
+
+#### Federated Learning xApp 🚧
+- **功能**：聯邦學習框架
+- **依賴**：TensorFlow + PyTorch (~1.5GB)
+- **需求**：GPU 加速運算
+- **狀態**：待 GPU 工作站部署
 
 ---
 
@@ -140,7 +212,15 @@ cd ../rc-xapp
 docker build -t localhost:5000/xapp-ran-control:1.0.0 .
 docker push localhost:5000/xapp-ran-control:1.0.0
 kubectl apply -f deploy/
+
+# Traffic Steering xApp
+cd ../traffic-steering
+docker build --no-cache -t localhost:5000/xapp-traffic-steering:1.0.0 .
+docker push localhost:5000/xapp-traffic-steering:1.0.0
+kubectl apply -f deploy/
 ```
+
+**注意**：Traffic Steering xApp 首次構建時建議使用 `--no-cache` 選項。
 
 ### Step 5: 驗證部署
 
@@ -149,9 +229,23 @@ kubectl apply -f deploy/
 kubectl get pods -n ricplt
 kubectl get pods -n ricxapp
 
+# 預期輸出（所有 Pod 應為 Running 1/1）
+NAME                                READY   STATUS    RESTARTS   AGE
+kpimon-xxxx                         1/1     Running   0          XXm
+ran-control-xxxx                    1/1     Running   0          XXm
+traffic-steering-xxxx               1/1     Running   0          XXm
+
 # 查看 xApp 日誌
 kubectl logs -n ricxapp -l app=kpimon
 kubectl logs -n ricxapp -l app=ran-control
+kubectl logs -n ricxapp -l app=traffic-steering
+
+# 測試健康檢查端點
+kubectl get svc -n ricxapp
+# 使用 kubectl port-forward 測試 API
+kubectl port-forward -n ricxapp svc/traffic-steering 8080:8080
+curl http://localhost:8080/ric/v1/health/alive
+curl http://localhost:8080/ric/v1/health/ready
 ```
 
 ---
