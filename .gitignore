@@ -22,3 +22,12 @@ kubeconfigs/
 CLAUDE.md
 SESSION-HANDOFF.md
 architecture/
+
+# ric-dep vendoring exclusions (only keep necessary files)
+ric-dep/docs/
+ric-dep/ci/
+ric-dep/depRicKubernetesOperator/
+ric-dep/RECIPE_EXAMPLE/
+ric-dep/.gitignore
+ric-dep/.gitreview
+ric-dep/.readthedocs.yaml

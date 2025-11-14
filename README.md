@@ -64,6 +64,18 @@
 
 ---
 
+## 📦 RIC Platform 配置 (ric-dep)
+
+本專案包含來自 **O-RAN SC J Release** 的完整部署配置，並已針對生產環境進行驗證和客製化。
+
+**重要修正**：
+- ✅ RTMgr 版本已修正為 0.9.6（原始版本 0.3.8 會導致部署失敗）
+- ✅ 包含所有 Helm chart 依賴，開箱即用
+
+**詳細說明**：[docs/RIC-DEP-CUSTOMIZATION.md](docs/RIC-DEP-CUSTOMIZATION.md)
+
+---
+
 ## 快速開始 (5 分鐘部署)
 
 請參考：**[docs/QUICK-START.md](docs/QUICK-START.md)**
@@ -108,8 +120,9 @@ oran-ric-platform/
 │   ├── deployment-guide-complete.md  # 完整部署指南
 │   ├── traffic-steering-deployment.md  # Traffic Steering 部署指南
 │   ├── GPU-WORKSTATION-HANDOFF.md    # GPU 工作站交接文檔
+│   ├── RIC-DEP-CUSTOMIZATION.md  # ric-dep 客製化說明
 │   └── PROJECT-REORGANIZATION-PLAN.md # 專案重組計畫
-├── ric-dep/                   # RIC Platform Helm charts
+├── ric-dep/                   # RIC Platform Helm charts (O-RAN SC J Release + 客製化)
 ├── xapps/                     # xApp 實現
 │   ├── kpimon-go-xapp/        # ✅ KPI 監控 xApp (已部署)
 │   │   ├── deploy/            # Kubernetes 部署清單
@@ -187,6 +200,8 @@ oran-ric-platform/
 git clone https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
 ```
+
+**就這麼簡單！** 所有配置已包含在專案中，無需額外步驟。
 
 ### Step 2: 設置環境變數
 
