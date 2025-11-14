@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # O-RAN RIC Platform Deployment Script
-# Optimized for Claude Code CLI workflows
+# 作者：蔡秀吉（thc1006）
 
 set -e
 

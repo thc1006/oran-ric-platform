@@ -15,3 +15,9 @@ venv/
 
 # Kubernetes artefacts
 kubeconfigs/
+
+# AI Development Tools (local only)
+.claude/
+.mcp.json
+CLAUDE.md
+SESSION-HANDOFF.md

@@ -94,7 +94,6 @@ xapps/qoe-predictor/     # 標準命名
 oran-ric-platform/
 │
 ├── README.md                           # 項目總覽（含快速開始）
-├── CLAUDE.md                           # AI 開發指南
 ├── LICENSE
 ├── .gitignore                          # 更新：忽略 venv、*.pyc 等
 │
