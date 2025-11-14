@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kpimon-config
+  namespace: ricxapp
+  labels:
+    app: kpimon
+    xapp: kpimon
+data:
+  config.json: |
+    {
+      "xapp_name": "kpimon",
+      "version": "1.0.0",
+      "rmr_port": 4560,
+      "http_port": 8080,
+      "redis": {
+        "host": "service-ricplt-dbaas-tcp.ricplt",
+        "port": 6379,
+        "db": 0
+      },
+      "influxdb": {
+        "url": "http://r4-influxdb-influxdb2.ricplt:8086",
+        "org": "oran",
+        "bucket": "kpimon",
+        "token": ""
+      },
+      "subscription": {
+        "report_period": 1000,
+        "granularity_period": 1000,
+        "max_measurements": 20
+      }
+    }

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ran-control-config
+  namespace: ricxapp
+  labels:
+    app: ran-control
+    xapp: ran-control
+data:
+  # RMR routing configuration
+  rmr-routes.txt: |
+    newrt|start
+    # RIC_CONTROL_REQ (12040) -> E2Term
+    mse|12040|1|service-ricplt-e2term-rmr-alpha.ricplt:38000
+    # RIC_SUB_REQ (12010) -> E2Term
+    mse|12010|1|service-ricplt-e2term-rmr-alpha.ricplt:38000
+    # RIC_SUB_DEL_REQ (12012) -> E2Term
+    mse|12012|1|service-ricplt-e2term-rmr-alpha.ricplt:38000
+    # RIC_CONTROL_ACK (12041) -> RAN Control xApp
+    mse|12041|1|ran-control:4580
+    # RIC_CONTROL_FAILURE (12042) -> RAN Control xApp
+    mse|12042|1|ran-control:4580
+    # RIC_INDICATION (12050) -> RAN Control xApp
+    mse|12050|1|ran-control:4580
+    # RIC_SUB_RESP (12011) -> RAN Control xApp
+    mse|12011|1|ran-control:4580
+    # RIC_SUB_DEL_RESP (12013) -> RAN Control xApp
+    mse|12013|1|ran-control:4580
+    # A1_POLICY_REQ (20010) -> RAN Control xApp
+    mse|20010|1|ran-control:4580
+    # A1_POLICY_RESP (20011) -> A1 Mediator
+    mse|20011|1|service-ricplt-a1mediator-rmr.ricplt:4562
+    newrt|end

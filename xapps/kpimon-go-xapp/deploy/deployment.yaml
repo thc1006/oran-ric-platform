@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kpimon
+  namespace: ricxapp
+  labels:
+    app: kpimon
+    xapp: kpimon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kpimon
+  template:
+    metadata:
+      labels:
+        app: kpimon
+        xapp: kpimon
+    spec:
+      containers:
+      - name: kpimon
+        image: localhost:5000/xapp-kpimon:1.0.0
+        imagePullPolicy: Always
+        env:
+        - name: RMR_SEED_RT
+          value: "/app/config/rmr-routes.txt"
+        - name: RMR_SRC_ID
+          value: "kpimon"
+        - name: RMR_RTG_SVC
+          value: "service-ricplt-rtmgr-rmr.ricplt:4561"
+        - name: INFLUXDB_URL
+          value: "http://r4-influxdb-influxdb2.ricplt:8086"
+        - name: INFLUXDB_ORG
+          value: "oran"
+        - name: INFLUXDB_BUCKET
+          value: "kpimon"
+        ports:
+        - name: rmr-data
+          containerPort: 4560
+          protocol: TCP
+        - name: http-metrics
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: kpimon-config

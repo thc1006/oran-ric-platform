@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ran-control
+  namespace: ricxapp
+  labels:
+    app: ran-control
+    xapp: ran-control
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ran-control
+  template:
+    metadata:
+      labels:
+        app: ran-control
+        xapp: ran-control
+    spec:
+      containers:
+      - name: ran-control
+        image: localhost:5000/xapp-ran-control:1.0.0
+        imagePullPolicy: Always
+        env:
+        - name: RMR_SEED_RT
+          value: "/app/config/rmr-routes.txt"
+        - name: RMR_SRC_ID
+          value: "ran-control"
+        - name: RMR_RTG_SVC
+          value: "service-ricplt-rtmgr-rmr.ricplt:4561"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/lib:$LD_LIBRARY_PATH"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        ports:
+        - name: rmr-data
+          containerPort: 4580
+          protocol: TCP
+        - name: rmr-route
+          containerPort: 4581
+          protocol: TCP
+        - name: http-api
+          containerPort: 8100
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 300m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health/alive
+            port: 8100
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8100
+          initialDelaySeconds: 15
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config/rmr-routes.txt
+          subPath: rmr-routes.txt
+      volumes:
+      - name: config-volume
+        configMap:
+          name: ran-control-config
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
