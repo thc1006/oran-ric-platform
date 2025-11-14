@@ -3,6 +3,10 @@
 QoE Predictor xApp - Quality of Experience Prediction Application
 O-RAN Release J compliant implementation
 Version: 1.0.0
+Author: 蔡秀吉 (thc1006)
+
+IMPORTANT: This xApp uses the COMPOSITION pattern for RMR API integration,
+NOT inheritance. This is the proven approach from Phase 3 Traffic Steering.
 """
 
 import json
@@ -18,7 +22,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow import keras
-from ricxappframe.xapp_frame import RmrXapp, rmr
+from ricxappframe.xapp_frame import RMRXapp, rmr
 from ricxappframe.mdclogger import Logger
 from flask import Flask, request, jsonify
 import redis
@@ -246,33 +250,36 @@ class QoEPredictor:
     def start(self):
         """Start the xApp"""
         logger.info("Starting QoE Predictor xApp...")
-        
-        # Initialize RMR xApp
-        self.xapp = RmrXapp(self._handle_message, rmr_port=self.config['rmr_port'])
         self.running = True
-        
-        # Start prediction thread
-        prediction_thread = threading.Thread(target=self._prediction_loop)
-        prediction_thread.daemon = True
-        prediction_thread.start()
-        
-        # Start model update thread
-        update_thread = threading.Thread(target=self._model_update_loop)
-        update_thread.daemon = True
-        update_thread.start()
-        
+
         # Start Flask API in separate thread
         api_thread = threading.Thread(target=self._start_api)
         api_thread.daemon = True
         api_thread.start()
-        
-        # Run the xApp
+
+        # Start prediction thread
+        prediction_thread = threading.Thread(target=self._prediction_loop)
+        prediction_thread.daemon = True
+        prediction_thread.start()
+
+        # Start model update thread
+        update_thread = threading.Thread(target=self._model_update_loop)
+        update_thread.daemon = True
+        update_thread.start()
+
+        # Small delay to ensure threads are ready
+        time.sleep(2)
+
+        # Initialize RMR xApp (CRITICAL: Use composition pattern, not inheritance)
+        # This follows the proven pattern from Traffic Steering xApp
+        self.xapp = RMRXapp(self._handle_message,
+                            rmr_port=self.config['rmr_port'],
+                            use_fake_sdl=False)
+
         logger.info("QoE Predictor xApp started successfully")
-        self.xapp.run(thread=True)
-        
-        # Keep main thread alive
-        while self.running:
-            time.sleep(1)
+
+        # Run the xApp (blocking call)
+        self.xapp.run()
     
     def _handle_message(self, xapp, summary, payload):
         """Handle incoming RMR messages"""

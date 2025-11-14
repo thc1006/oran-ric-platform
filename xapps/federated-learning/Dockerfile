@@ -44,8 +44,10 @@ ENV RMR_SRC_ID=federated-learning
 ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
+# CRITICAL: Install ricsdl first to lock down redis version
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir ricsdl==3.0.2 && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/

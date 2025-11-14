@@ -1,9 +1,25 @@
 # Federated Learning xApp Python Dependencies
 # O-RAN Release J
+# Author: 蔡秀吉 (thc1006)
+
+# IMPORTANT: ricsdl must be installed first to lock down redis version
+# DO NOT change the order of these dependencies
+
+# O-RAN SDL (MUST be first)
+ricsdl==3.0.2
+
+# Data Storage (version locked by ricsdl)
+redis==4.1.1
+hiredis==2.0.0
 
 # O-RAN xApp Framework
 ricxappframe==3.2.2
 mdclogpy==1.1.4
+
+# Message Processing (version locked to avoid conflicts)
+protobuf==3.20.3
+msgpack==1.0.7
+pickle5==0.0.12
 
 # Machine Learning - TensorFlow
 tensorflow==2.15.0
@@ -19,6 +35,7 @@ scikit-learn==1.3.2
 numpy==1.24.3
 pandas==2.0.3
 joblib==1.3.2
+h5py==3.10.0
 
 # Federated Learning
 flwr==1.5.0  # Flower framework for federated learning
@@ -27,19 +44,10 @@ flwr==1.5.0  # Flower framework for federated learning
 cryptography==41.0.7
 pycryptodome==3.19.0
 
-# Data Storage
-redis==5.0.1
-h5py==3.10.0
-
 # REST API
 flask==3.0.0
 flask-restful==0.3.10
 flask-cors==4.0.0
-
-# Message Processing
-protobuf==4.25.1
-msgpack==1.0.7
-pickle5==0.0.12
 
 # Utilities
 pyyaml==6.0.1

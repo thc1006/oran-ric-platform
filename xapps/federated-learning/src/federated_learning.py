@@ -3,6 +3,10 @@
 Federated Learning xApp - Distributed ML Training Application
 O-RAN Release J compliant implementation
 Version: 1.0.0
+Author: 蔡秀吉 (thc1006)
+
+IMPORTANT: This xApp uses the COMPOSITION pattern for RMR API integration,
+NOT inheritance. This is the proven approach from Phase 3 Traffic Steering.
 """
 
 import json
@@ -19,7 +23,7 @@ import tensorflow as tf
 from tensorflow import keras
 import torch
 import torch.nn as nn
-from ricxappframe.xapp_frame import RmrXapp, rmr
+from ricxappframe.xapp_frame import RMRXapp, rmr
 from ricxappframe.mdclogger import Logger
 from flask import Flask, request, jsonify
 import redis
@@ -306,38 +310,41 @@ class FederatedLearning:
     def start(self):
         """Start the xApp"""
         logger.info("Starting Federated Learning xApp...")
-        
-        # Initialize RMR xApp
-        self.xapp = RmrXapp(self._handle_message, rmr_port=self.config['rmr_port'])
         self.running = True
-        
-        # Start FL coordinator thread
-        coordinator_thread = threading.Thread(target=self._fl_coordinator)
-        coordinator_thread.daemon = True
-        coordinator_thread.start()
-        
-        # Start aggregator thread
-        aggregator_thread = threading.Thread(target=self._model_aggregator)
-        aggregator_thread.daemon = True
-        aggregator_thread.start()
-        
-        # Start monitoring thread
-        monitor_thread = threading.Thread(target=self._monitor_training)
-        monitor_thread.daemon = True
-        monitor_thread.start()
-        
+
         # Start Flask API
         api_thread = threading.Thread(target=self._start_api)
         api_thread.daemon = True
         api_thread.start()
-        
-        # Run the xApp
+
+        # Start FL coordinator thread
+        coordinator_thread = threading.Thread(target=self._fl_coordinator)
+        coordinator_thread.daemon = True
+        coordinator_thread.start()
+
+        # Start aggregator thread
+        aggregator_thread = threading.Thread(target=self._model_aggregator)
+        aggregator_thread.daemon = True
+        aggregator_thread.start()
+
+        # Start monitoring thread
+        monitor_thread = threading.Thread(target=self._monitor_training)
+        monitor_thread.daemon = True
+        monitor_thread.start()
+
+        # Small delay to ensure threads are ready
+        time.sleep(2)
+
+        # Initialize RMR xApp (CRITICAL: Use composition pattern, not inheritance)
+        # This follows the proven pattern from Traffic Steering xApp
+        self.xapp = RMRXapp(self._handle_message,
+                            rmr_port=self.config['rmr_port'],
+                            use_fake_sdl=False)
+
         logger.info("Federated Learning xApp started successfully")
-        self.xapp.run(thread=True)
-        
-        # Keep main thread alive
-        while self.running:
-            time.sleep(1)
+
+        # Run the xApp (blocking call)
+        self.xapp.run()
     
     def _handle_message(self, xapp, summary, payload):
         """Handle incoming RMR messages"""
