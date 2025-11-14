@@ -2,11 +2,16 @@
 # O-RAN Release J
 
 # O-RAN xApp Framework
+# ricxappframe 3.2.2 requires ricsdl>=3.0.0,<4.0.0
+# Explicitly specify ricsdl 3.0.2 for redis 4.x compatibility
 ricxappframe==3.2.2
+ricsdl==3.0.2
 mdclogpy==1.1.4
 
 # Data Storage
-redis==5.0.1
+# ricsdl 3.0.2 requires redis==4.1.1
+redis==4.1.1
+hiredis==2.0.0
 
 # Async Support
 asyncio==3.4.3
@@ -21,7 +26,8 @@ numpy==1.24.3
 pandas==2.0.3
 
 # Message Processing
-protobuf==4.25.1
+# protobuf version compatible with ricxappframe 3.2.2
+protobuf==3.20.3
 msgpack==1.0.7
 
 # Utilities

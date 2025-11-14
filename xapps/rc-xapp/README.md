@@ -211,8 +211,8 @@ curl -X POST http://ran-control:8100/api/policy \
 
 與 KPIMON 共享相同的依賴版本：
 - ricxappframe: 3.2.2
-- ricsdl: 3.1.3
-- redis: 4.3.6
+- ricsdl: 3.0.2（經實際部署驗證）
+- redis: 4.1.1（ricsdl 3.0.2 指定版本）
 - protobuf: 3.20.3
 
 額外依賴：

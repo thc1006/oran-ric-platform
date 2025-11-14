@@ -41,13 +41,15 @@ ENV RMR_SRC_ID=ran-control
 ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
+# Install ricsdl 3.0.2 first to ensure compatibility with redis 4.x
+# (ricxappframe 3.2.2 depends on ricsdl>=3.0.0,<4.0.0, which might pull 3.0.0)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir ricsdl==3.0.2 && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/
 COPY config/ ./config/
-COPY policies/ ./policies/
 
 # Create directories
 RUN mkdir -p /app/logs && \
