@@ -14,9 +14,9 @@ from datetime import datetime
 import redis
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
-from ricxappframe.xapp_frame import RmrXapp, rmr
+from ricxappframe.xapp_frame import RMRXapp, rmr
 from ricxappframe.xapp_sdl import SDLWrapper
-from ricxappframe.mdclogger import Logger
+from mdclogpy import Logger
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 import numpy as np
 
@@ -150,7 +150,11 @@ class KPIMonitor:
         start_http_server(8080)
         
         # Initialize RMR xApp
-        self.xapp = RmrXapp(self._handle_message, rmr_port=self.config['rmr_port'])
+        # Fixed: Changed from RmrXapp to RMRXapp (correct class name per official docs)
+        # Added use_fake_sdl parameter as required by ricxappframe 3.2.2
+        self.xapp = RMRXapp(self._handle_message,
+                            rmr_port=self.config.get('rmr_port', 4560),
+                            use_fake_sdl=False)
         self.running = True
         
         # Start subscription thread
@@ -171,13 +175,23 @@ class KPIMonitor:
         while self.running:
             time.sleep(1)
     
-    def _handle_message(self, xapp, summary, payload):
-        """Handle incoming RMR messages"""
+    def _handle_message(self, rmr_xapp, summary, sbuf):
+        """Handle incoming RMR messages
+
+        Fixed: Updated function signature to match ricxappframe 3.2.2 API
+        - Changed xapp -> rmr_xapp (per official docs)
+        - Changed payload -> sbuf (message buffer)
+        - Added rmr_free() to properly release buffer
+        """
         MESSAGES_RECEIVED.inc()
-        
+
         msg_type = summary[rmr.RMR_MS_MSG_TYPE]
         logger.debug(f"Received message type: {msg_type}")
-        
+
+        # Extract payload from buffer (returns bytes, need to decode)
+        payload_bytes = rmr.get_payload(sbuf)
+        payload = payload_bytes.decode('utf-8') if payload_bytes else ""
+
         with PROCESSING_TIME.time():
             if msg_type == RIC_INDICATION:
                 self._handle_indication(payload)
@@ -187,8 +201,11 @@ class KPIMonitor:
                 self._handle_subscription_delete_response(payload)
             else:
                 logger.warning(f"Unknown message type: {msg_type}")
-        
+
         MESSAGES_PROCESSED.inc()
+
+        # Free the message buffer (required by ricxappframe API)
+        rmr_xapp.rmr_free(sbuf)
     
     def _handle_indication(self, payload):
         """Handle RIC Indication messages containing KPIs"""

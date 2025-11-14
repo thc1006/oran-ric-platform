@@ -147,8 +147,10 @@
       "alpha": 0.8
     }
   },
+  "rmr_port": 4580,
+  "http_port": 8100,
   "redis": {
-    "host": "redis-service.ricplt",
+    "host": "service-ricplt-dbaas-tcp.ricplt",
     "port": 6379,
     "db": 2,
     "ttl": 3600

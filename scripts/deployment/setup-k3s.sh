@@ -73,8 +73,7 @@ install_k3s() {
         --disable-network-policy \
         --cluster-domain=$CLUSTER_DOMAIN \
         --kube-apiserver-arg=max-requests-inflight=400 \
-        --kube-apiserver-arg=max-mutating-requests-inflight=200 \
-        --kube-apiserver-arg=feature-gates=TTLAfterFinished=true
+        --kube-apiserver-arg=max-mutating-requests-inflight=200
     
     # Wait for k3s to be ready
     log_info "Waiting for k3s to be ready..."
@@ -89,9 +88,9 @@ install_k3s() {
     export KUBECONFIG=$HOME/.kube/config
     echo "export KUBECONFIG=$HOME/.kube/config" >> $HOME/.bashrc
     
-    # Wait for nodes to be ready
-    kubectl wait --for=condition=ready node --all --timeout=300s
-    
+    # Wait for nodes to be ready (may timeout without CNI, continue anyway)
+    kubectl wait --for=condition=ready node --all --timeout=300s || true
+
     log_info "k3s installation completed"
 }
 

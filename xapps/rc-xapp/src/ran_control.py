@@ -15,8 +15,8 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 import numpy as np
-from ricxappframe.xapp_frame import RmrXapp, rmr
-from ricxappframe.mdclogger import Logger
+from ricxappframe.xapp_frame import RMRXapp, rmr
+from mdclogpy import Logger
 from flask import Flask, request, jsonify
 import redis
 
@@ -179,7 +179,11 @@ class RANController:
         logger.info("Starting RAN Control xApp...")
         
         # Initialize RMR xApp
-        self.xapp = RmrXapp(self._handle_message, rmr_port=self.config['rmr_port'])
+        # Fixed: Changed from RmrXapp to RMRXapp (correct class name per official docs)
+        # Added use_fake_sdl parameter as required by ricxappframe 3.2.2
+        self.xapp = RMRXapp(self._handle_message,
+                            rmr_port=self.config.get('rmr_port', 4580),
+                            use_fake_sdl=False)
         self.running = True
         
         # Start control processor thread
@@ -210,10 +214,20 @@ class RANController:
         while self.running:
             time.sleep(1)
     
-    def _handle_message(self, xapp, summary, payload):
-        """Handle incoming RMR messages"""
+    def _handle_message(self, rmr_xapp, summary, sbuf):
+        """Handle incoming RMR messages
+
+        Fixed: Updated function signature to match ricxappframe 3.2.2 API
+        - Changed xapp -> rmr_xapp (per official docs)
+        - Changed payload -> sbuf (message buffer)
+        - Added rmr_free() to properly release buffer
+        """
         msg_type = summary[rmr.RMR_MS_MSG_TYPE]
-        
+
+        # Extract payload from buffer (returns bytes, need to decode)
+        payload_bytes = rmr.get_payload(sbuf)
+        payload = payload_bytes.decode('utf-8') if payload_bytes else ""
+
         if msg_type == RIC_CONTROL_ACK:
             self._handle_control_ack(payload)
         elif msg_type == RIC_CONTROL_FAILURE:
@@ -224,6 +238,9 @@ class RANController:
             self._handle_policy_request(summary, payload)
         else:
             logger.debug(f"Received message type: {msg_type}")
+
+        # Free the message buffer (required by ricxappframe API)
+        rmr_xapp.rmr_free(sbuf)
     
     def _handle_control_ack(self, payload):
         """Handle control acknowledgment"""

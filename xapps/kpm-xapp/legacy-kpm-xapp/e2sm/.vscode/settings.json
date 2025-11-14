@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "stdio.h": "c",
-        "e2sm-kpm-ranfunction-description.h": "c",
-        "asn_system.h": "c",
-        "type_traits": "c",
-        "asn_sequence_of.h": "c"
-    }
-}
