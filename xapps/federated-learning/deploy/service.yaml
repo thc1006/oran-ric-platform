@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: federated-learning
+  namespace: ricxapp
+  labels:
+    app: federated-learning
+    xapp: federated-learning
+spec:
+  type: ClusterIP
+  selector:
+    app: federated-learning
+  ports:
+  - name: rmr-data
+    port: 4590
+    targetPort: 4590
+    protocol: TCP
+  - name: rmr-route
+    port: 4591
+    targetPort: 4591
+    protocol: TCP
+  - name: http-api
+    port: 8110
+    targetPort: 8110
+    protocol: TCP

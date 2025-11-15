@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qoe-predictor-config
+  namespace: ricxapp
+  labels:
+    app: qoe-predictor
+data:
+  config.json: |
+    {
+      "xapp_name": "qoe-predictor",
+      "version": "1.0.0",
+      "rmr_port": 4570,
+      "http_port": 8090,
+      "redis": {
+        "host": "redis-service.ricplt",
+        "port": 6379,
+        "db": 1
+      },
+      "models": {
+        "update_interval": 3600,
+        "batch_size": 32,
+        "prediction_window": 10,
+        "confidence_threshold": 0.8
+      },
+      "features": {
+        "window_size": 100,
+        "aggregation": ["mean", "std", "min", "max", "percentile_95"]
+      }
+    }
+
+  rmr-routes.txt: |
+    newrt|start
+    mse|12050|1|qoe-predictor:4570
+    mse|20010|1|qoe-predictor:4570
+    mse|20011|1|a1mediator-rmr.ricplt:4562
+    newrt|end

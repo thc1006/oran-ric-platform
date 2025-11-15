@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qoe-predictor
+  namespace: ricxapp
+  labels:
+    app: qoe-predictor
+    xapp: qoe-predictor
+    version: v1.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qoe-predictor
+  template:
+    metadata:
+      labels:
+        app: qoe-predictor
+        xapp: qoe-predictor
+        version: v1.0.0
+    spec:
+      serviceAccountName: qoe-predictor-sa
+      containers:
+      - name: qoe-predictor
+        image: localhost:5000/xapp-qoe-predictor:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: rmr-data
+          containerPort: 4570
+          protocol: TCP
+        - name: rmr-route
+          containerPort: 4571
+          protocol: TCP
+        - name: http-api
+          containerPort: 8090
+          protocol: TCP
+        env:
+        - name: RMR_SRC_ID
+          value: "qoe-predictor"
+        - name: RMR_SEED_RT
+          value: "/app/config/rmr-routes.txt"
+        - name: REDIS_HOST
+          value: "redis-service.ricplt"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_DB
+          value: "1"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health/alive
+            port: 8090
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8090
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: models
+          mountPath: /app/models
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+      volumes:
+      - name: config
+        configMap:
+          name: qoe-predictor-config
+      - name: models
+        emptyDir: {}
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst

@@ -1,0 +1,146 @@
+# Federated Learning xApp - GPU-enabled Dockerfile
+# O-RAN Release J compliant - Production Ready with GPU Support
+# Author: 蔡秀吉 (thc1006)
+
+# ============================================================================
+# Stage 1: Builder - Build wheels with GPU support
+# ============================================================================
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 AS builder
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    git \
+    curl \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
+
+# Copy requirements
+COPY requirements.txt .
+
+# Build wheels for non-GPU packages first
+RUN pip3.11 wheel --no-cache-dir --wheel-dir /wheels ricsdl==3.0.2 && \
+    pip3.11 wheel --no-cache-dir --wheel-dir /wheels \
+    redis hiredis ricxappframe mdclogpy protobuf msgpack \
+    flask flask-restful flask-cors pyyaml jsonschema \
+    cryptography prometheus-client
+
+# Build wheels for ML packages with GPU support
+RUN pip3.11 wheel --no-cache-dir --wheel-dir /wheels \
+    numpy pandas scikit-learn joblib h5py flwr pickle5
+
+# Install TensorFlow and PyTorch with GPU support separately
+# These will be installed from official GPU-enabled packages in runtime stage
+
+# ============================================================================
+# Stage 2: Runtime with GPU support
+# ============================================================================
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+LABEL maintainer="O-RAN xApp Developer"
+LABEL description="Federated Learning xApp for O-RAN Release J - GPU Enabled"
+LABEL version="1.0.0-gpu"
+
+WORKDIR /app
+
+# Install Python and minimal runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip \
+    curl \
+    libgomp1 \
+    libopenblas0-pthread \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
+# Copy pre-built wheels
+COPY --from=builder /wheels /wheels
+
+# Install non-GPU packages from wheels
+RUN pip3 install --no-cache-dir --no-index --find-links=/wheels \
+    ricsdl redis hiredis ricxappframe mdclogpy protobuf msgpack \
+    flask flask-restful flask-cors pyyaml jsonschema \
+    cryptography prometheus-client \
+    numpy pandas scikit-learn joblib h5py flwr pickle5 && \
+    rm -rf /wheels
+
+# Install TensorFlow GPU
+RUN pip3 install --no-cache-dir \
+    tensorflow[and-cuda]==2.15.0
+
+# Install PyTorch GPU (CUDA 11.8)
+RUN pip3 install --no-cache-dir \
+    torch==2.1.2 \
+    torchvision==0.16.2 \
+    --index-url https://download.pytorch.org/whl/cu118
+
+# Set environment variables for GPU
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
+    CUDA_VISIBLE_DEVICES=0 \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    PYTHONUNBUFFERED=1 \
+    RMR_SRC_ID=federated-learning \
+    FL_MODE=production \
+    FL_GPU_ENABLED=true
+
+# Copy application code
+COPY src/ ./src/
+COPY config/ ./config/
+COPY models/ ./models/
+COPY aggregator/ ./aggregator/
+
+# Create directories
+RUN mkdir -p /app/models/global \
+             /app/models/local \
+             /app/models/checkpoints \
+             /app/data/train \
+             /app/data/test \
+             /app/logs && \
+    chmod -R 755 /app/models /app/data /app/logs
+
+# Create health check script
+RUN echo '#!/bin/bash\ncurl -f http://localhost:8110/health/alive || exit 1' > /usr/local/bin/health_check.sh && \
+    chmod +x /usr/local/bin/health_check.sh
+
+# Create GPU check script
+RUN echo '#!/usr/bin/python3\nimport tensorflow as tf\nimport torch\nprint(f"TensorFlow GPUs: {len(tf.config.list_physical_devices(\"GPU\"))}")\nprint(f"PyTorch CUDA: {torch.cuda.is_available()}")' > /usr/local/bin/check_gpu.py && \
+    chmod +x /usr/local/bin/check_gpu.py
+
+# Security: non-root user
+RUN useradd -m -u 1000 xapp && \
+    chown -R xapp:xapp /app
+
+USER xapp
+
+# Expose ports
+EXPOSE 4590 4591 8110
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD /usr/local/bin/health_check.sh
+
+# Run the xApp
+CMD ["python3", "-u", "/app/src/federated_learning.py"]

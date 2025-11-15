@@ -1,0 +1,101 @@
+# QoE Predictor xApp - Optimized Multi-stage Dockerfile
+# O-RAN Release J compliant - Production Ready
+# Author: 蔡秀吉 (thc1006)
+
+# ============================================================================
+# Stage 1: Builder - Compile dependencies and build wheels
+# ============================================================================
+FROM python:3.11-slim AS builder
+
+LABEL maintainer="O-RAN xApp Developer"
+LABEL stage="builder"
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    git \
+    curl \
+    libssl-dev \
+    libhdf5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY requirements.txt .
+
+# Build all Python wheels
+RUN pip install --upgrade pip setuptools wheel && \
+    pip wheel --no-cache-dir --wheel-dir /wheels ricsdl==3.0.2 && \
+    pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
+
+# ============================================================================
+# Stage 2: Runtime - Minimal production image
+# ============================================================================
+FROM python:3.11-slim
+
+LABEL maintainer="O-RAN xApp Developer"
+LABEL description="QoE Predictor xApp for O-RAN Release J - Optimized"
+LABEL version="1.0.0"
+
+WORKDIR /app
+
+# Install minimal runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    libgomp1 \
+    libopenblas0-pthread \
+    libhdf5-103 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy pre-built wheels from builder
+COPY --from=builder /wheels /wheels
+
+# Install Python packages from wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels \
+    ricsdl redis hiredis ricxappframe mdclogpy protobuf msgpack \
+    flask flask-restful flask-cors pyyaml jsonschema \
+    cryptography prometheus-client \
+    numpy pandas scikit-learn joblib && \
+    rm -rf /wheels
+
+# Set environment variables
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
+    PYTHONUNBUFFERED=1 \
+    RMR_SRC_ID=qoe-predictor
+
+# Copy application code
+COPY src/ ./src/
+COPY config/ ./config/
+COPY models/ ./models/
+
+# Create directories
+RUN mkdir -p /app/models/saved \
+             /app/models/checkpoints \
+             /app/data && \
+    chmod -R 755 /app/models /app/data
+
+# Create health check script
+RUN echo '#!/bin/bash\ncurl -f http://localhost:8090/health/alive || exit 1' > /usr/local/bin/health_check.sh && \
+    chmod +x /usr/local/bin/health_check.sh
+
+# Security: non-root user
+RUN useradd -m -u 1000 xapp && \
+    chown -R xapp:xapp /app
+
+USER xapp
+
+# Expose ports
+EXPOSE 4570 4571 8090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /usr/local/bin/health_check.sh
+
+# Run the xApp
+CMD ["python3", "-u", "/app/src/qoe_predictor.py"]

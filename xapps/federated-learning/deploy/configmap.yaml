@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: federated-learning-config
+  namespace: ricxapp
+  labels:
+    app: federated-learning
+data:
+  config.json: |
+    {
+      "xapp_name": "federated-learning",
+      "version": "1.0.0",
+      "rmr_port": 4590,
+      "http_port": 8110,
+      "redis": {
+        "host": "redis-service.ricplt",
+        "port": 6379,
+        "db": 3,
+        "ttl": 86400,
+        "model_storage": true,
+        "gradient_cache": true
+      },
+      "fl_config": {
+        "min_clients": 3,
+        "max_clients": 100,
+        "rounds": 100,
+        "local_epochs": 5,
+        "batch_size": 32,
+        "learning_rate": 0.01,
+        "aggregation_method": "fedavg",
+        "differential_privacy": {
+          "enabled": true,
+          "epsilon": 1.0,
+          "delta": 1e-5,
+          "clip_norm": 1.0
+        },
+        "secure_aggregation": true,
+        "model_compression": {
+          "enabled": true,
+          "method": "quantization",
+          "bits": 8
+        }
+      },
+      "models": {
+        "network_optimization": {
+          "type": "tensorflow",
+          "architecture": "cnn",
+          "input_shape": [100, 20],
+          "output_classes": 5
+        }
+      },
+      "security": {
+        "encryption": true,
+        "authentication": true,
+        "key_size": 2048
+      }
+    }
+
+  rmr-routes.txt: |
+    newrt|start
+    mse|30001|1|e2term-rmr.ricplt:4560
+    mse|30003|1|e2term-rmr.ricplt:4560
+    mse|30006|1|e2term-rmr.ricplt:4560
+    mse|30007|1|e2term-rmr.ricplt:4560
+    mse|30002|1|federated-learning:4590
+    mse|30004|1|federated-learning:4590
+    mse|30005|1|federated-learning:4590
+    mse|30008|1|federated-learning:4590
+    mse|30009|1|federated-learning:4590
+    mse|12050|1|federated-learning:4590
+    newrt|end

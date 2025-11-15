@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: federated-learning-models-pvc
+  namespace: ricxapp
+  labels:
+    app: federated-learning
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path  # Adjust based on your cluster's storage class

@@ -51,16 +51,27 @@
 
 詳細部署指南：[docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
 
-### Phase 4：ML xApp 部署 🚧 待 GPU 工作站
+### Phase 4：ML xApps 部署 ✅ 完成
 
-**狀態**：準備中
-**需求**：GPU 加速運算環境
+**狀態**：生產就緒（CPU + GPU 版本）
+**版本標籤**：`v1.0.0-phase4`
+**完成日期**：2025-11-15
 
-待部署的 ML xApp：
-- **QoE Predictor xApp** - QoE 預測與優化（需要 TensorFlow 2.15.0）
-- **Federated Learning xApp** - 聯邦學習框架（需要 TensorFlow + PyTorch）
+新增部署的 ML xApp：
+- **QoE Predictor xApp** - 基於 ML 的 QoE 預測與優化
+- **Federated Learning xApp** - 分散式聯邦學習框架
 
-**交接文檔**：[docs/GPU-WORKSTATION-HANDOFF.md](docs/GPU-WORKSTATION-HANDOFF.md)
+**重要成就**：
+- 完成 RMR API 組合模式重構（遵循 Phase 3 標準）
+- 修正所有依賴版本衝突（ricsdl、redis、protobuf）
+- 創建優化的多階段 Dockerfile（顯著縮短構建時間）
+- 提供完整的 Kubernetes 部署配置
+- 支持 CPU 和 GPU 兩種部署模式
+
+**部署指南**：
+- CPU 版本：[docs/phase4-ml-xapps-deployment.md](docs/phase4-ml-xapps-deployment.md)
+- 本地測試：[docs/PHASE4-LOCAL-TEST-REPORT.md](docs/PHASE4-LOCAL-TEST-REPORT.md)
+- 完整總結：[docs/PHASE4-SUMMARY.md](docs/PHASE4-SUMMARY.md)
 
 ---
 
