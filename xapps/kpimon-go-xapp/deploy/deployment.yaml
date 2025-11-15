@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: kpimon
-        image: localhost:5000/xapp-kpimon:1.0.0
+        image: localhost:5000/xapp-kpimon:1.0.1
         imagePullPolicy: Always
         env:
         - name: RMR_SEED_RT

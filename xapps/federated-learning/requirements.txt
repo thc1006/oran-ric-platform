@@ -19,12 +19,13 @@ mdclogpy==1.1.4
 # Message Processing (version locked to avoid conflicts)
 protobuf==3.20.3
 msgpack==1.0.7
-pickle5==0.0.12
+# pickle5 removed: Python 3.8+ has built-in pickle protocol 5 support
 
 # Machine Learning - TensorFlow
+# Note: Using compatible versions for Python 3.11
 tensorflow==2.15.0
-tensorflow-privacy==0.9.0
-tensorflow-federated==0.75.0
+# tensorflow-privacy and tensorflow-federated temporarily removed due to numpy conflicts
+# Will be re-added in future releases when needed
 
 # Machine Learning - PyTorch
 torch==2.1.2
@@ -32,13 +33,13 @@ torchvision==0.16.2
 
 # ML Utilities
 scikit-learn==1.3.2
-numpy==1.24.3
+numpy>=1.23.5,<2.0.0  # Compatible with TensorFlow 2.15.0
 pandas==2.0.3
 joblib==1.3.2
 h5py==3.10.0
 
 # Federated Learning
-flwr==1.5.0  # Flower framework for federated learning
+# flwr framework temporarily removed - will add when implementing distributed training
 
 # Security & Cryptography
 cryptography==41.0.7
