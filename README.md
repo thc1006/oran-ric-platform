@@ -1,337 +1,751 @@
-# O-RAN RIC Platform - 生產級部署
+# O-RAN Near-RT RIC Platform with Production-Ready xApps
 
-[![O-RAN SC J Release](https://img.shields.io/badge/O--RAN%20SC-J%20Release-blue)](https://o-ran-sc.org)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326ce5)](https://kubernetes.io)
+<div align="center">
+
+[![Version](https://img.shields.io/badge/version-v2.0.0-blue)](https://github.com/thc1006/oran-ric-platform/releases/tag/v2.0.0)
+[![O-RAN SC](https://img.shields.io/badge/O--RAN%20SC-J%20Release-orange)](https://o-ran-sc.org)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326ce5?logo=kubernetes)](https://kubernetes.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
+[![Prometheus](https://img.shields.io/badge/Monitoring-Prometheus-e6522c?logo=prometheus)](https://prometheus.io)
+[![Grafana](https://img.shields.io/badge/Dashboards-Grafana-f46800?logo=grafana)](https://grafana.com)
 
-## 專案簡介
+*Production-ready O-RAN Near-RT RIC Platform with comprehensive xApps, Prometheus metrics integration, and E2 interface testing capabilities*
 
-本專案提供生產級的 O-RAN Near-RT RIC Platform (J Release) 部署方案，包含已驗證的 xApp 實現。
+[Quick Start](docs/deployment/QUICKSTART.md) • [Documentation](docs/deployment/) • [Release Notes](https://github.com/thc1006/oran-ric-platform/releases/tag/v2.0.0) • [E2 Node Simulator](https://github.com/thc1006/oran-e2-node)
 
-**作者**：蔡秀吉（thc1006）
-
----
-
-## 當前狀態與進度
-
-### Phase 1：基礎 xApp 部署 ✅ 完成
-
-**狀態**：生產就緒
-**版本標籤**：`v1.0.0-phase1`
-
-已成功部署並驗證的 xApp：
-- **KPIMON xApp** - KPI 監控與異常檢測
-- **RAN Control xApp** - RAN 控制與優化
-
-### Phase 2：專案重組 ✅ 完成
-
-**狀態**：已完成
-**版本標籤**：`v1.0.0-phase2`
-
-完成項目：
-- 統一 legacy 資料夾位置
-- 清理專案結構
-- 統一命名規範
-
-詳細記錄：[docs/PROJECT-REORGANIZATION-PLAN.md](docs/PROJECT-REORGANIZATION-PLAN.md)
-
-### Phase 3：Traffic Steering xApp 部署 ✅ 完成
-
-**狀態**：生產就緒
-**版本標籤**：`v1.0.0-phase3`
-**部署日期**：2025-11-14
-
-新增部署的 xApp：
-- **Traffic Steering xApp** - 策略導向的切換決策
-
-**重要技術突破**：
-- 解決 ricxappframe 3.2.2 的 RMR API 使用問題
-- 建立標準化的 xApp 開發模式（組合優於繼承）
-- 完成依賴版本驗證（ricsdl 3.0.2 + redis 4.1.1）
-
-詳細部署指南：[docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
-
-### Phase 4：ML xApps 部署 ✅ 完成
-
-**狀態**：生產就緒（CPU + GPU 版本）
-**版本標籤**：`v1.0.0-phase4`
-**完成日期**：2025-11-15
-
-新增部署的 ML xApp：
-- **QoE Predictor xApp** - 基於 ML 的 QoE 預測與優化
-- **Federated Learning xApp** - 分散式聯邦學習框架
-
-**重要成就**：
-- 完成 RMR API 組合模式重構（遵循 Phase 3 標準）
-- 修正所有依賴版本衝突（ricsdl、redis、protobuf）
-- 創建優化的多階段 Dockerfile（顯著縮短構建時間）
-- 提供完整的 Kubernetes 部署配置
-- 支持 CPU 和 GPU 兩種部署模式
-
-**部署指南**：
-- CPU 版本：[docs/phase4-ml-xapps-deployment.md](docs/phase4-ml-xapps-deployment.md)
-- 本地測試：[docs/PHASE4-LOCAL-TEST-REPORT.md](docs/PHASE4-LOCAL-TEST-REPORT.md)
-- 完整總結：[docs/PHASE4-SUMMARY.md](docs/PHASE4-SUMMARY.md)
+</div>
 
 ---
 
-## 📦 RIC Platform 配置 (ric-dep)
+## 📖 Table of Contents
 
-本專案包含來自 **O-RAN SC J Release** 的完整部署配置，並已針對生產環境進行驗證和客製化。
-
-**重要修正**：
-- ✅ RTMgr 版本已修正為 0.9.6（原始版本 0.3.8 會導致部署失敗）
-- ✅ 包含所有 Helm chart 依賴，開箱即用
-
-**詳細說明**：[docs/RIC-DEP-CUSTOMIZATION.md](docs/RIC-DEP-CUSTOMIZATION.md)
-
----
-
-## 📦 RIC Platform 配置 (ric-dep)
-
-本專案包含來自 **O-RAN SC J Release** 的完整部署配置，並已針對生產環境進行驗證和客製化。
-
-**重要修正**：
-- ✅ RTMgr 版本已修正為 0.9.6（原始版本 0.3.8 會導致部署失敗）
-- ✅ 包含所有 Helm chart 依賴，開箱即用
-
-**詳細說明**：[docs/RIC-DEP-CUSTOMIZATION.md](docs/RIC-DEP-CUSTOMIZATION.md)
+- [Overview](#-overview)
+- [What's New in v2.0.0](#-whats-new-in-v200)
+- [Architecture](#-architecture)
+- [Quick Start](#-quick-start)
+- [xApps](#-xapps)
+- [Monitoring & Observability](#-monitoring--observability)
+- [Testing](#-testing)
+- [Documentation](#-documentation)
+- [Technical Stack](#-technical-stack)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [Credits](#-credits)
 
 ---
 
-## 快速開始 (5 分鐘部署)
+## 🎯 Overview
 
-請參考：**[docs/QUICK-START.md](docs/QUICK-START.md)**
+This repository provides a **production-grade deployment** of the O-RAN Software Community's Near-RT RIC Platform (J Release) with five fully-functional xApps, complete Prometheus metrics integration, Grafana dashboards, and comprehensive testing infrastructure.
 
-此指南幫助您快速部署已經驗證成功的 KPIMON 和 RAN Control xApp。
+### Key Features
 
----
+✅ **5 Production-Ready xApps** - KPIMON, Traffic Steering, QoE Predictor, RAN Control, Federated Learning
+✅ **Prometheus Metrics** - Complete observability with 8 alert rule categories
+✅ **Grafana Dashboards** - Real-time visualization of xApp performance
+✅ **E2 Simulator** - HTTP-based E2 interface traffic generator ([oran-e2-node](https://github.com/thc1006/oran-e2-node))
+✅ **Automated Testing** - Playwright E2E test suite
+✅ **Comprehensive Documentation** - Quick start, troubleshooting, and deployment guides
+✅ **Kubernetes-Native** - Optimized for k3s with Helm charts
 
-## 完整部署指南
+### Use Cases
 
-需要詳細步驟？請參考：**[docs/deployment-guide-complete.md](docs/deployment-guide-complete.md)**
-
-包含：
-- 環境準備
-- RIC Platform 完整部署
-- xApp 部署與驗證
-- 問題排查與解決方案
-
----
-
-## 系統需求
-
-### 必要組件
-- Kubernetes (k3s): v1.28+
-- Helm: 3.x
-- Docker: 最新版本
-- Python: 3.11+
-
-### 系統資源
-- CPU: 8 核心以上
-- 記憶體: 16GB 以上
-- 磁碟: 100GB 以上
+- **5G RAN Testing** - Validate xApp logic without physical RAN equipment
+- **Performance Benchmarking** - Measure E2 indication processing latency
+- **Observability Development** - Build custom Grafana dashboards and alerts
+- **Educational Platform** - Learn O-RAN architecture and xApp development
+- **CI/CD Integration** - Automated deployment and testing pipelines
 
 ---
 
-## 專案結構
+## ✨ What's New in v2.0.0
 
-```
-oran-ric-platform/
-├── docs/                      # 部署指南與文檔
-│   ├── QUICK-START.md         # 5 分鐘快速部署
-│   ├── deployment-guide-complete.md  # 完整部署指南
-│   ├── traffic-steering-deployment.md  # Traffic Steering 部署指南
-│   ├── GPU-WORKSTATION-HANDOFF.md    # GPU 工作站交接文檔
-│   ├── RIC-DEP-CUSTOMIZATION.md  # ric-dep 客製化說明
-│   └── PROJECT-REORGANIZATION-PLAN.md # 專案重組計畫
-├── ric-dep/                   # RIC Platform Helm charts (O-RAN SC J Release + 客製化)
-├── xapps/                     # xApp 實現
-│   ├── kpimon-go-xapp/        # ✅ KPI 監控 xApp (已部署)
-│   │   ├── deploy/            # Kubernetes 部署清單
-│   │   ├── src/               # 源代碼
-│   │   └── README.md          # xApp 說明
-│   ├── rc-xapp/               # ✅ RAN Control xApp (已部署)
-│   │   ├── deploy/            # Kubernetes 部署清單
-│   │   ├── src/               # 源代碼
-│   │   └── README.md          # xApp 說明
-│   ├── traffic-steering/      # ✅ Traffic Steering xApp (已部署)
-│   │   ├── deploy/            # Kubernetes 部署清單
-│   │   ├── src/               # 源代碼
-│   │   ├── Dockerfile         # Docker 構建文件
-│   │   └── requirements.txt   # Python 依賴
-│   ├── qoe-predictor/         # 🚧 QoE Predictor xApp (待 GPU)
-│   │   └── requirements.txt   # 需要 TensorFlow 2.15.0
-│   └── federated-learning/    # 🚧 Federated Learning xApp (待 GPU)
-│       └── requirements.txt   # 需要 TensorFlow + PyTorch
-├── legacy/                    # 參考實現（不部署）
-└── scripts/                   # 自動化腳本
-```
+### 🏗️ Architecture Refactoring
 
----
+**E2 Node Extraction** - Major Breaking Change
 
-## 已部署並驗證的 xApp
-
-### KPIMON xApp ✅
-- **功能**：KPI 監控與異常檢測
-- **E2 Service Model**：E2SM-KPM v3.0
-- **監控指標**：20 種 KPI 類型
-- **狀態**：生產就緒
-- **詳細說明**：[xapps/kpimon-go-xapp/README.md](xapps/kpimon-go-xapp/README.md)
-
-### RAN Control xApp ✅
-- **功能**：RAN 控制與優化
-- **E2 Service Model**：E2SM-RC v2.0
-- **優化算法**：5 種（切換、資源、負載均衡、切片、功率）
-- **狀態**：生產就緒
-- **詳細說明**：[xapps/rc-xapp/README.md](xapps/rc-xapp/README.md)
-
-### Traffic Steering xApp ✅
-- **功能**：策略導向的切換決策
-- **E2 Service Model**：E2SM-KPM v3.0 + E2SM-RC v2.0
-- **整合**：與 QoE Predictor 和 RC xApp 協作
-- **特性**：
-  - UE 性能指標監控（RSRP、RSRQ、吞吐量）
-  - A1 策略管理
-  - 動態切換決策
-  - RESTful 健康檢查 API
-- **狀態**：生產就緒
-- **部署日期**：2025-11-14
-- **詳細說明**：[docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
-
-### 待部署 xApp（需要 GPU）
-
-#### QoE Predictor xApp 🚧
-- **功能**：QoE 預測與優化
-- **依賴**：TensorFlow 2.15.0 (~500MB)
-- **需求**：GPU 加速運算
-- **狀態**：待 GPU 工作站部署
-
-#### Federated Learning xApp 🚧
-- **功能**：聯邦學習框架
-- **依賴**：TensorFlow + PyTorch (~1.5GB)
-- **需求**：GPU 加速運算
-- **狀態**：待 GPU 工作站部署
-
----
-
-## 部署流程
-
-### Step 1: Clone 專案
+The E2 Node Simulator has been extracted to an independent repository: **[oran-e2-node](https://github.com/thc1006/oran-e2-node)**
 
 ```bash
-git clone https://github.com/thc1006/oran-ric-platform.git
+# Migration: Initialize submodule after pulling
+git submodule update --init --recursive
+```
+
+**Benefits:**
+- Independent development cycle for E2 Node
+- Cleaner repository structure
+- Enables community contributions to E2 simulator
+
+### 📊 Prometheus Metrics Integration (Complete)
+
+**All xApps now expose metrics:**
+
+| xApp | Metrics Endpoint | Port | Key Metrics |
+|------|------------------|------|-------------|
+| KPIMON | `/ric/v1/metrics` | 8080 | `kpimon_messages_received_total`, `kpimon_messages_processed_total` |
+| Traffic Steering | `/ric/v1/metrics` | 8080 | Message counters, processing time |
+| QoE Predictor | `/ric/v1/metrics` | 8080 | Prediction accuracy, latency |
+| RAN Control | `/ric/v1/metrics` | 8080 | Control actions, success rate |
+| Federated Learning | `/ric/v1/metrics` | 8080 | Training rounds, model accuracy |
+
+**Prometheus Features:**
+- Automatic scraping via annotations
+- 8 comprehensive alert rule categories
+- Custom recording rules for complex queries
+- Integration with Grafana dashboards
+
+### 📈 Grafana Dashboards
+
+**Verified Dashboards:**
+- xApp Performance Overview
+- E2 Interface Metrics
+- Resource Utilization
+- Alert Status
+
+**Automated Testing:**
+- Playwright E2E tests verify dashboard data
+- All 6 dashboard tests passing
+
+### 🧪 E2 Interface Testing
+
+**E2 Simulator Features:**
+- Supports 5 xApps simultaneously
+- Realistic KPI data generation (PRB, RSRP, RSRQ, CQI, MCS)
+- Configurable simulation parameters (interval, cell ID)
+- Kubernetes-native deployment
+
+**Repository:** [github.com/thc1006/oran-e2-node](https://github.com/thc1006/oran-e2-node)
+
+### 📚 Complete Documentation
+
+**New Documentation:**
+- [QUICKSTART.md](docs/deployment/QUICKSTART.md) - 10-minute deployment guide
+- [TROUBLESHOOTING.md](docs/deployment/TROUBLESHOOTING.md) - Common issues & solutions
+- [xapp-prometheus-metrics-integration.md](docs/deployment/xapp-prometheus-metrics-integration.md) - Complete deployment walkthrough (15,000+ words)
+
+### 🐛 Bug Fixes
+
+1. **Traffic Steering SDL Error** - Added error handling to prevent Pod restarts
+2. **Port Configuration** - Unified Service, Deployment, Prometheus annotations
+3. **E2 Simulator Ports** - Fixed QoE (8090) and RC (8100) port configuration
+4. **KPIMON Metrics** - Added counter increment logic in /e2/indication endpoint
+5. **Playwright Tests** - Updated to new headless mode (`--headless=new`)
+
+### 🧹 Repository Cleanup
+
+- Removed 10,000+ lines of archived HackMD documentation
+- Updated `.gitignore` to exclude development artifacts
+- Reduced repository size significantly
+- Cleaner git history
+
+---
+
+## 🏗️ Architecture
+
+### System Overview
+
+```
+┌─────────────────┐
+│  E2 Simulator   │ (oran-e2-node)
+│  (Submodule)    │
+└────────┬────────┘
+         │ HTTP POST /e2/indication
+         ├──────────────────┬──────────────┬─────────────┬─────────────┐
+         ↓                  ↓              ↓             ↓             ↓
+┌─────────────┐  ┌──────────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│   KPIMON    │  │   Traffic    │  │   QoE    │  │    RC    │  │    FL    │
+│   :8081     │  │   Steering   │  │ Predictor│  │   :8100  │  │   :8110  │
+│   :8080*    │  │   :8081      │  │   :8090  │  │   :8080* │  │   :8080* │
+└──────┬──────┘  └──────┬───────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+       │                │                │             │             │
+       │          Prometheus Scraping (:8080)          │             │
+       └────────────────┴────────────────┴─────────────┴─────────────┘
+                        │
+                 ┌──────▼──────┐
+                 │  Prometheus │
+                 │   :9090     │
+                 └──────┬──────┘
+                        │
+                 ┌──────▼──────┐
+                 │   Grafana   │
+                 │   :3000     │
+                 └─────────────┘
+```
+
+*Port 8080: Prometheus metrics HTTP server
+*Port 8081/8090/8100/8110: xApp business logic API
+
+### Component Versions
+
+| Component | Version | Status |
+|-----------|---------|--------|
+| O-RAN SC | J Release | Stable |
+| Kubernetes | 1.28+ | Stable |
+| KPIMON | v1.0.1 | ✅ Production |
+| Traffic Steering | v1.0.2 | ✅ Production |
+| QoE Predictor | v1.0.1 | ✅ Production |
+| RAN Control | v1.0.1 | ✅ Production |
+| Federated Learning | v1.0.0 | ✅ Production |
+| E2 Simulator | v1.0.0 | ✅ Independent Repo |
+| Prometheus | Latest | ✅ Integrated |
+| Grafana | Latest | ✅ Integrated |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Kubernetes**: k3s v1.28+ or equivalent
+- **Helm**: 3.x
+- **Docker**: Latest version
+- **System Resources**: 8+ CPU cores, 16GB+ RAM, 100GB+ disk
+
+### 1. Clone Repository (with Submodules)
+
+```bash
+git clone --recurse-submodules https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
 ```
 
-**就這麼簡單！** 所有配置已包含在專案中，無需額外步驟。
+**Existing clones:** Run `git submodule update --init --recursive`
 
-### Step 2: 設置環境變數
+### 2. Deploy All xApps (Automated)
 
 ```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+sudo bash scripts/redeploy-xapps-with-metrics.sh
 ```
 
-### Step 3: 部署 RIC Platform
+This script automatically:
+- Builds all xApp Docker images
+- Pushes to local registry (localhost:5000)
+- Deploys to `ricxapp` namespace
+- Verifies metrics endpoints
 
-參考 [docs/QUICK-START.md](docs/QUICK-START.md) 或 [docs/deployment-guide-complete.md](docs/deployment-guide-complete.md)
-
-### Step 4: 部署 xApp
+### 3. Deploy E2 Simulator
 
 ```bash
-# KPIMON xApp
-cd xapps/kpimon-go-xapp
-docker build -t localhost:5000/xapp-kpimon:1.0.0 .
-docker push localhost:5000/xapp-kpimon:1.0.0
-kubectl apply -f deploy/
-
-# RAN Control xApp
-cd ../rc-xapp
-docker build -t localhost:5000/xapp-ran-control:1.0.0 .
-docker push localhost:5000/xapp-ran-control:1.0.0
-kubectl apply -f deploy/
-
-# Traffic Steering xApp
-cd ../traffic-steering
-docker build --no-cache -t localhost:5000/xapp-traffic-steering:1.0.0 .
-docker push localhost:5000/xapp-traffic-steering:1.0.0
-kubectl apply -f deploy/
+sudo bash scripts/deployment/deploy-e2-simulator.sh
 ```
 
-**注意**：Traffic Steering xApp 首次構建時建議使用 `--no-cache` 選項。
-
-### Step 5: 驗證部署
+### 4. Configure Prometheus Alerts
 
 ```bash
-# 檢查 Pod 狀態
-kubectl get pods -n ricplt
+kubectl create configmap r4-infrastructure-prometheus-server \
+  --from-file=alerting_rules.yml=monitoring/prometheus/alerts/xapp-alerts.yml \
+  --from-file=prometheus.yml=monitoring/prometheus/prometheus.yml \
+  --dry-run=client -o yaml | kubectl apply -n ricplt -f -
+
+# Restart Prometheus to load alerts
+kubectl delete pod -n ricplt -l app=prometheus,component=server
+```
+
+### 5. Access Monitoring UIs
+
+**Prometheus:**
+```bash
+kubectl port-forward -n ricplt svc/r4-infrastructure-prometheus-server 9090:80
+# Open: http://localhost:9090
+```
+
+**Grafana:**
+```bash
+kubectl port-forward -n ricplt svc/r4-infrastructure-grafana 3000:80
+# Open: http://localhost:3000
+# Username: admin
+# Password: oran-ric-admin
+```
+
+### 6. Verify Deployment
+
+```bash
+# Check all xApp Pods
 kubectl get pods -n ricxapp
 
-# 預期輸出（所有 Pod 應為 Running 1/1）
-NAME                                READY   STATUS    RESTARTS   AGE
-kpimon-xxxx                         1/1     Running   0          XXm
-ran-control-xxxx                    1/1     Running   0          XXm
-traffic-steering-xxxx               1/1     Running   0          XXm
+# Expected output (all 1/1 Running):
+# kpimon-xxx              1/1     Running
+# traffic-steering-xxx    1/1     Running
+# qoe-predictor-xxx       1/1     Running
+# ran-control-xxx         1/1     Running
+# federated-learning-xxx  1/1     Running
+# e2-simulator-xxx        1/1     Running
 
-# 查看 xApp 日誌
-kubectl logs -n ricxapp -l app=kpimon
-kubectl logs -n ricxapp -l app=ran-control
-kubectl logs -n ricxapp -l app=traffic-steering
+# Verify metrics
+kubectl exec -n ricxapp $(kubectl get pod -n ricxapp -l app=kpimon -o jsonpath='{.items[0].metadata.name}') -- \
+  curl -s http://localhost:8080/ric/v1/metrics | grep kpimon_messages
+```
 
-# 測試健康檢查端點
-kubectl get svc -n ricxapp
-# 使用 kubectl port-forward 測試 API
-kubectl port-forward -n ricxapp svc/traffic-steering 8080:8080
-curl http://localhost:8080/ric/v1/health/alive
-curl http://localhost:8080/ric/v1/health/ready
+**🎉 Deployment Complete!** See [QUICKSTART.md](docs/deployment/QUICKSTART.md) for more details.
+
+---
+
+## 📦 xApps
+
+### KPIMON xApp
+
+**Purpose:** KPI monitoring and anomaly detection
+
+**Features:**
+- E2SM-KPM v3.0 support
+- 20+ KPI types monitoring
+- Real-time metrics streaming
+- HTTP endpoint for E2 indications (port 8081)
+
+**Metrics:**
+```promql
+kpimon_messages_received_total
+kpimon_messages_processed_total
+kpimon_processing_time_seconds
+kpimon_active_subscriptions
+kpimon_kpi_value{type="prb_usage_dl"}
+```
+
+**Documentation:** [xapps/kpimon-go-xapp/README.md](xapps/kpimon-go-xapp/README.md)
+
+---
+
+### Traffic Steering xApp
+
+**Purpose:** Policy-driven handover decision making
+
+**Features:**
+- E2SM-KPM + E2SM-RC integration
+- A1 policy management
+- Dynamic handover decisions
+- SDL error handling
+
+**Endpoints:**
+- `/e2/indication` (8081) - Receive E2 messages
+- `/ric/v1/health/alive` (8080) - Liveness check
+- `/ric/v1/health/ready` (8080) - Readiness check
+- `/ric/v1/metrics` (8080) - Prometheus metrics
+
+**Documentation:** [docs/traffic-steering-deployment.md](docs/traffic-steering-deployment.md)
+
+---
+
+### QoE Predictor xApp
+
+**Purpose:** ML-based QoE prediction and optimization
+
+**Features:**
+- Machine learning model for QoE prediction
+- Collaboration with Traffic Steering
+- Real-time prediction API
+- HTTP endpoint (port 8090)
+
+**Dependencies:**
+- TensorFlow 2.15.0 (optional GPU acceleration)
+
+---
+
+### RAN Control xApp
+
+**Purpose:** RAN control and optimization
+
+**Features:**
+- E2SM-RC v2.0 support
+- 5 optimization algorithms
+- Control action execution
+- HTTP endpoint (port 8100)
+
+**Optimization Algorithms:**
+1. Handover optimization
+2. Resource allocation
+3. Load balancing
+4. Network slicing
+5. Power control
+
+---
+
+### Federated Learning xApp
+
+**Purpose:** Distributed federated learning framework
+
+**Features:**
+- Multi-model support (TensorFlow + PyTorch)
+- Privacy-preserving training
+- Aggregation algorithms
+- HTTP endpoint (port 8110)
+
+**Use Cases:**
+- RAN parameter optimization
+- Traffic prediction
+- Anomaly detection
+
+---
+
+## 📊 Monitoring & Observability
+
+### Prometheus Integration
+
+**Scraping Configuration:**
+
+All xApps are auto-discovered via Pod annotations:
+
+```yaml
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/ric/v1/metrics"
+```
+
+**Available Metrics:**
+
+```promql
+# Message Counters
+kpimon_messages_received_total
+kpimon_messages_processed_total
+
+# Performance Metrics
+kpimon_processing_time_seconds_bucket
+kpimon_processing_time_seconds_sum
+kpimon_processing_time_seconds_count
+
+# Business Metrics
+kpimon_active_subscriptions
+kpimon_kpi_value{type="prb_usage_dl"}
+kpimon_kpi_value{type="active_ue_count"}
+```
+
+### Alert Rules
+
+**8 Alert Categories:**
+
+1. **xApp Availability** - Pod down, restart loops
+2. **Message Processing** - Stalled processing, high latency
+3. **Resource Usage** - CPU/memory limits
+4. **E2 Interface** - Connection failures
+5. **Business Logic** - PRB usage, signal quality
+6. **Prometheus Self-Monitoring** - Scrape failures
+7. **Network** - Service unreachable
+8. **Data Quality** - Missing metrics, stale data
+
+**Example Alert:**
+
+```yaml
+- alert: KPIMONMessageProcessingStalled
+  expr: rate(kpimon_messages_received_total[5m]) == 0 and kpimon_messages_received_total > 0
+  for: 5m
+  labels:
+    severity: critical
+    component: kpimon
+  annotations:
+    summary: "KPIMON message processing has stalled"
+```
+
+### Grafana Dashboards
+
+**Included Dashboards:**
+
+- **xApp Performance** - Message rates, processing time, error rates
+- **E2 Interface** - Indication counts, latency, connection status
+- **Resource Utilization** - CPU, memory, network I/O
+- **Alert Overview** - Active alerts, alert history
+
+**Access:** http://localhost:3000 (after port-forward)
+
+---
+
+## 🧪 Testing
+
+### E2E Testing with Playwright
+
+**Test Suite:** 6 tests covering all Grafana dashboards
+
+```bash
+# Install dependencies (first time)
+npm install
+
+# Run tests
+npm run test:grafana
+```
+
+**Test Coverage:**
+- ✅ Dashboard accessibility
+- ✅ Metrics data presence
+- ✅ Panel rendering
+- ✅ Query execution
+- ✅ Alert rule verification
+- ✅ Time range functionality
+
+**Configuration:** [playwright.config.js](playwright.config.js)
+
+### E2 Simulator Testing
+
+**Continuous Traffic Generation:**
+
+```bash
+# View E2 Simulator logs
+kubectl logs -n ricxapp -l app=e2-simulator -f
+
+# Expected output:
+# Simulation Iteration 120
+# Successfully sent to kpimon (200)
+# Successfully sent to traffic-steering (200)
+# ...
+```
+
+**Manual Testing:**
+
+```bash
+# Test KPIMON endpoint
+kubectl exec -n ricxapp e2-simulator-xxx -- \
+  curl -X POST http://kpimon.ricxapp.svc.cluster.local:8081/e2/indication \
+  -H "Content-Type: application/json" \
+  -d '{"cell_id": 1234567, "prb_usage_dl": 45.5}'
+```
+
+### Performance Testing
+
+**Targets:**
+- E2 indication processing: < 10ms
+- Control command latency: < 100ms
+- xApp startup time: < 30s
+- Prometheus scraping: < 5s
+
+**Benchmark:**
+
+```bash
+# Measure processing latency
+kubectl logs -n ricxapp -l app=kpimon | grep "Processing time:"
 ```
 
 ---
 
-## RIC Platform 組件
+## 📚 Documentation
 
-部署成功後包含以下組件：
+### Deployment Guides
 
-- **Redis (dbaas)**: 分布式存儲
-- **E2 Termination**: E2 接口終端
-- **A1 Mediator**: A1 接口調解器
-- **RTMgr**: 路由管理器
-- **InfluxDB**: 時間序列數據庫
+| Document | Description | Target Audience |
+|----------|-------------|-----------------|
+| [QUICKSTART.md](docs/deployment/QUICKSTART.md) | 10-minute deployment | Experienced users |
+| [xapp-prometheus-metrics-integration.md](docs/deployment/xapp-prometheus-metrics-integration.md) | Complete walkthrough (15k words) | First-time deployers |
+| [TROUBLESHOOTING.md](docs/deployment/TROUBLESHOOTING.md) | Common issues & solutions | All users |
+| [README.md](docs/deployment/README.md) | Documentation index | All users |
+
+### Technical Documentation
+
+- **xApp Implementation:** Each xApp directory contains detailed README
+- **RIC Platform Config:** [docs/RIC-DEP-CUSTOMIZATION.md](docs/RIC-DEP-CUSTOMIZATION.md)
+- **Project Structure:** [docs/PROJECT-REORGANIZATION-PLAN.md](docs/PROJECT-REORGANIZATION-PLAN.md)
+
+### API Documentation
+
+**Health Check Endpoints:**
+
+```bash
+# Liveness (is xApp running?)
+GET /ric/v1/health/alive
+
+# Readiness (is xApp ready to serve?)
+GET /ric/v1/health/ready
+
+# Metrics (Prometheus format)
+GET /ric/v1/metrics
+```
+
+**E2 Indication Endpoint:**
+
+```bash
+POST /e2/indication
+Content-Type: application/json
+
+{
+  "cell_id": 1234567,
+  "prb_usage_dl": 45.5,
+  "prb_usage_ul": 32.8,
+  "active_ue_count": 25
+}
+```
 
 ---
 
-## 版本資訊
+## 🛠️ Technical Stack
 
-- **O-RAN SC Release**: J (April 2025)
-- **Kubernetes**: v1.28.5
-- **RMR Library**: 4.9.4
-- **Python xApp Framework**: ricxappframe 3.2.2
+### Core Technologies
+
+- **O-RAN SC**: J Release (April 2025)
+- **Kubernetes**: v1.28.5 (k3s)
+- **Helm**: 3.x
+- **Docker**: Latest
+
+### Programming Languages
+
+- **Python**: 3.11+ (xApps)
+- **Go**: 1.19+ (RMR library)
+- **JavaScript**: ES6+ (Testing)
+
+### Libraries & Frameworks
+
+- **ricxappframe**: 3.2.2 (Python xApp framework)
+- **RMR**: 4.9.4 (RIC Message Router)
+- **ricsdl**: 3.0.2 (Shared Data Layer)
+- **Prometheus Client**: Latest
+- **Playwright**: Latest (E2E testing)
+
+### Infrastructure
+
+- **Container Registry**: localhost:5000 (Docker registry)
+- **Service Mesh**: Native Kubernetes
+- **Storage**: Redis (SDL backend)
+- **Monitoring**: Prometheus + Grafana
 
 ---
 
-## 問題排查
+## 📁 Project Structure
 
-遇到問題？請參考：
-
-1. **快速開始指南的常見問題區**：[docs/QUICK-START.md#常見問題](docs/QUICK-START.md#常見問題)
-2. **完整部署指南的問題排查章節**：[docs/deployment-guide-complete.md#常見問題與解決方案](docs/deployment-guide-complete.md#常見問題與解決方案)
+```
+oran-ric-platform/
+├── docs/                           # Documentation
+│   ├── deployment/                 # Deployment guides (NEW in v2.0.0)
+│   │   ├── README.md               # Documentation index
+│   │   ├── QUICKSTART.md           # 10-minute deployment
+│   │   ├── TROUBLESHOOTING.md      # Common issues
+│   │   └── xapp-prometheus-metrics-integration.md  # Complete guide
+│   ├── RIC-DEP-CUSTOMIZATION.md    # Platform configuration
+│   └── PROJECT-REORGANIZATION-PLAN.md  # Project history
+│
+├── xapps/                          # xApp implementations
+│   ├── kpimon-go-xapp/             # KPIMON v1.0.1
+│   ├── traffic-steering/           # Traffic Steering v1.0.2
+│   ├── qoe-predictor/              # QoE Predictor v1.0.1
+│   ├── ran-control/                # RAN Control v1.0.1
+│   └── federated-learning/         # Federated Learning v1.0.0
+│
+├── monitoring/                     # Monitoring configuration (NEW)
+│   ├── prometheus/
+│   │   ├── alerts/
+│   │   │   └── xapp-alerts.yml     # 8 alert categories
+│   │   └── prometheus.yml          # Scraping config
+│   └── grafana/
+│       └── dashboards/             # Grafana dashboards
+│
+├── simulator/                      # E2 interface testing
+│   └── e2-simulator/               # Git submodule → oran-e2-node
+│
+├── scripts/                        # Automation scripts
+│   ├── redeploy-xapps-with-metrics.sh  # One-click deployment
+│   └── deployment/
+│       └── deploy-e2-simulator.sh  # E2 Simulator deployment
+│
+├── tests/                          # Automated tests (NEW)
+│   └── grafana/
+│       └── dashboards.spec.js      # Playwright E2E tests
+│
+├── ric-dep/                        # RIC Platform Helm charts
+│   ├── helm/
+│   │   └── infrastructure/         # Platform components
+│   └── bin/                        # Installation scripts
+│
+├── legacy/                         # Reference implementations
+│
+├── .gitignore                      # Git exclusions
+├── .gitmodules                     # Git submodule config (NEW)
+├── package.json                    # Node.js dependencies (testing)
+├── playwright.config.js            # Playwright configuration
+└── README.md                       # This file
+```
 
 ---
 
-## 技術支援
+## 🤝 Contributing
 
-- **GitHub Issues**: https://github.com/thc1006/oran-ric-platform/issues
-- **作者**: 蔡秀吉（thc1006）
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+**Coding Standards:**
+- Follow Python PEP 8
+- Add comprehensive docstrings
+- Write tests for new features
+- Update documentation
 
 ---
 
-## 授權
+## 🙏 Credits
 
-Apache License 2.0 - 參見 [LICENSE](LICENSE)
+### Author
+
+**蔡秀吉 (thc1006)**
+
+### Related Projects
+
+- [oran-e2-node](https://github.com/thc1006/oran-e2-node) - E2 Node Simulator (Independent Repository)
+
+### Built With
+
+- [O-RAN Software Community](https://o-ran-sc.org/) - O-RAN SC J Release
+- [Kubernetes](https://kubernetes.io/) - Container Orchestration
+- [Prometheus](https://prometheus.io/) - Monitoring & Alerting
+- [Grafana](https://grafana.com/) - Visualization
+- [Playwright](https://playwright.dev/) - E2E Testing
 
 ---
 
-**部署指引優先級**：
-1. 快速部署：[docs/QUICK-START.md](docs/QUICK-START.md)
-2. 完整指南：[docs/deployment-guide-complete.md](docs/deployment-guide-complete.md)
-3. xApp 文檔：各 xApp 目錄下的 README.md
+## 📝 Changelog
+
+### v2.0.0 (2025-11-15)
+
+**Architecture:**
+- Extracted E2 Node to independent repository ([oran-e2-node](https://github.com/thc1006/oran-e2-node))
+- Removed 10,000+ lines of archived documentation
+- Updated `.gitignore` for cleaner repository
+
+**Features:**
+- Complete Prometheus metrics integration for all xApps
+- 8 comprehensive Prometheus alert rule categories
+- Grafana dashboards with automated E2E testing
+- HTTP endpoints for all xApps (8081/8090/8100/8110)
+- E2 Simulator with realistic KPI generation
+
+**Bug Fixes:**
+- Fixed Traffic Steering SDL error handling
+- Unified port configuration across all components
+- Fixed KPIMON metrics increment logic
+- Updated Playwright to new headless mode
+
+**Documentation:**
+- Added QUICKSTART.md (10-minute deployment)
+- Added TROUBLESHOOTING.md (comprehensive debugging)
+- Added 15,000-word complete deployment guide
+- Updated all xApp README files
+
+### Earlier Versions
+
+- **v1.0.0-phase4** (2025-11-15) - ML xApps deployment
+- **v1.0.0-phase3** (2025-11-14) - Traffic Steering deployment
+- **v1.0.0-phase2** (2025-11-13) - Project reorganization
+- **v1.0.0-phase1** (2025-11-12) - Initial KPIMON + RC deployment
+
+---
+
+## 📄 License
+
+Apache License 2.0 - See [LICENSE](LICENSE) for details.
+
+---
+
+## 🔗 Links
+
+- **GitHub Repository**: https://github.com/thc1006/oran-ric-platform
+- **E2 Node Simulator**: https://github.com/thc1006/oran-e2-node
+- **Issues**: https://github.com/thc1006/oran-ric-platform/issues
+- **Releases**: https://github.com/thc1006/oran-ric-platform/releases
+- **O-RAN SC Wiki**: https://wiki.o-ran-sc.org/
+
+---
+
+<div align="center">
+
+**Made with ❤️ by 蔡秀吉 (thc1006)**
+
+*Advancing O-RAN deployment with production-ready xApps and comprehensive observability*
+
+[⬆ Back to Top](#o-ran-near-rt-ric-platform-with-production-ready-xapps)
+
+</div>
