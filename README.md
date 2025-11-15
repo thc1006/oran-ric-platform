@@ -76,6 +76,18 @@
 
 ---
 
+## 📦 RIC Platform 配置 (ric-dep)
+
+本專案包含來自 **O-RAN SC J Release** 的完整部署配置，並已針對生產環境進行驗證和客製化。
+
+**重要修正**：
+- ✅ RTMgr 版本已修正為 0.9.6（原始版本 0.3.8 會導致部署失敗）
+- ✅ 包含所有 Helm chart 依賴，開箱即用
+
+**詳細說明**：[docs/RIC-DEP-CUSTOMIZATION.md](docs/RIC-DEP-CUSTOMIZATION.md)
+
+---
+
 ## 快速開始 (5 分鐘部署)
 
 請參考：**[docs/QUICK-START.md](docs/QUICK-START.md)**
