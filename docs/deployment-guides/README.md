@@ -1,6 +1,6 @@
 # O-RAN RIC Platform J Release 部署指南集
 **作者**: 蔡秀吉 (thc1006)
-**最後更新**: 2025年11月14日
+**最後更新**: 2025年11月15日
 
 ---
 
@@ -21,6 +21,11 @@
 5. **[04-federated-learning-deployment.md](./04-federated-learning-deployment.md)** - Federated Learning xApp (聯邦學習)
 6. **[05-rc-xapp-deployment.md](./05-rc-xapp-deployment.md)** - RC xApp (RAN 控制)
 7. **[06-traffic-steering-deployment.md](./06-traffic-steering-deployment.md)** - Traffic Steering xApp (流量導向)
+8. **[07-xapps-health-check-deployment.md](./07-xapps-health-check-deployment.md)** - 所有 xApp 健康檢查部署與驗證
+
+### 監控系統部署
+9. **[08-prometheus-monitoring-deployment.md](./08-prometheus-monitoring-deployment.md)** - Prometheus 監控系統部署
+10. **[09-xapps-metrics-endpoint-update.md](./09-xapps-metrics-endpoint-update.md)** - xApps Prometheus Metrics 端點更新 (✨ 最新)
 
 ## 部署環境
 
@@ -41,13 +46,17 @@
 
 | 階段 | 開始時間 | 完成時間 | 狀態 | 備註 |
 |------|---------|---------|------|------|
-| k3s 叢集 | 2025-11-14 10:00 | - | 進行中 | - |
-| RIC Platform | - | - | 待開始 | - |
-| KPIMON xApp | - | - | 待開始 | - |
-| QoE Predictor | - | - | 待開始 | - |
-| FL xApp | - | - | 待開始 | - |
-| RC xApp | - | - | 待開始 | - |
-| TS xApp | - | - | 待開始 | - |
+| k3s 叢集 | 2025-11-14 10:00 | 2025-11-14 12:00 | ✅ 完成 | 單節點配置 |
+| RIC Platform | 2025-11-14 12:00 | 2025-11-14 15:00 | ✅ 完成 | 8 個核心組件運行 |
+| KPIMON xApp | 2025-11-15 08:30 | 2025-11-15 08:45 | ✅ 完成 | 健康檢查正常 |
+| RC xApp | 2025-11-14 15:00 | 2025-11-14 16:00 | ✅ 完成 | 已運行 25+ 小時 |
+| Traffic Steering | 2025-11-14 16:00 | 2025-11-14 17:00 | ✅ 完成 | 已運行 24+ 小時 |
+| QoE Predictor | 2025-11-15 08:45 | 2025-11-15 09:00 | ✅ 完成 | 修正 logger 導入和 securityContext |
+| FL xApp | 2025-11-15 09:00 | 2025-11-15 09:05 | ✅ 完成 | 修正 logger 導入和 securityContext |
+| 整體驗證 | 2025-11-15 09:05 | 2025-11-15 09:10 | ✅ 完成 | 所有 xApp 健康檢查通過 |
+| Prometheus 監控 | 2025-11-15 10:27 | 2025-11-15 10:29 | ✅ 完成 | 遵循 O-RAN SC 標準 |
+| xApps Metrics 更新 | 2025-11-15 11:41 | 2025-11-15 11:46 | ✅ 完成 | 4 個 xApp 修正完成 |
+| KPIMON Annotations | 2025-11-15 11:52 | 2025-11-15 11:54 | ✅ 完成 | 5 個 xApp 全部達標 |
 
 ## 文件編排說明
 
