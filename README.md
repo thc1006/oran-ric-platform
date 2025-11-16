@@ -83,19 +83,8 @@ source ~/.bashrc
 **Verify installation:**
 ```bash
 kubectl get nodes    # Should show: Ready
+helm version         # Should show version without errors
 ```
-
-> **⚠️ IMPORTANT - If you see "connection refused" error:**
-> ```bash
-> # Manually set KUBECONFIG (if setup-k3s.sh didn't complete successfully)
-> export KUBECONFIG=$HOME/.kube/config
-> echo "export KUBECONFIG=$HOME/.kube/config" >> ~/.bashrc
-> source ~/.bashrc
->
-> # Verify Helm can access the cluster
-> helm version
-> kubectl cluster-info
-> ```
 
 **Create RIC namespaces:**
 ```bash
@@ -283,15 +272,6 @@ kubectl create namespace ricplt
 kubectl create namespace ricxapp
 kubectl create namespace ricobs
 ```
-
-> **⚠️ Troubleshooting "connection refused" errors:**
-> If Helm shows "Kubernetes cluster unreachable" errors, the KUBECONFIG is not set correctly.
-> Run these commands to fix:
-> ```bash
-> export KUBECONFIG=$HOME/.kube/config
-> source ~/.bashrc
-> helm version  # Should now work
-> ```
 
 ### Build Container Images
 

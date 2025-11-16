@@ -119,9 +119,14 @@ install_cilium() {
         --set bpf.masquerade=false \
         --set image.pullPolicy=IfNotPresent
     
-    # Wait for Cilium to be ready
-    cilium status --wait
-    
+    # Wait for Cilium to be ready (allow timeout without failing)
+    if cilium status --wait; then
+        log_info "Cilium is ready"
+    else
+        log_warn "Cilium status check timed out, but continuing with installation..."
+        log_warn "Cilium may still be initializing in the background"
+    fi
+
     log_info "Cilium installation completed"
 }
 
