@@ -29,31 +29,95 @@
 
 ## Quick Start
 
-### Prerequisites
-- Kubernetes 1.28+ (k3s recommended)
-- 8+ CPU cores, 16GB+ RAM, 100GB+ disk
-- Helm 3.x, Docker
+### System Requirements
+- **OS**: Ubuntu 20.04/22.04/24.04 LTS (recommended)
+- **Resources**: 8+ CPU cores, 16GB+ RAM, 100GB+ disk
+- **Network**: Internet access for package downloads
 
-### Deploy (6 Steps)
+### Installation (One-Time Setup)
+
+#### Option A: Automated Setup (Recommended)
 
 ```bash
-# 0. Setup environment (k3s users)
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# 1. Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
 
-# 1. Clone with submodules
+# 2. Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# 3. Install k3s and setup cluster (includes CNI, MetalLB, namespaces)
 git clone https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
+sudo bash scripts/deployment/setup-k3s.sh
 
-# 2. Create namespaces
+# 4. Reload shell to apply KUBECONFIG
+source ~/.bashrc
+```
+
+**Verification:**
+```bash
+docker --version    # Should show Docker 27.x+
+helm version        # Should show v3.x+
+kubectl get nodes   # Should show Ready node
+```
+
+#### Option B: Manual Step-by-Step
+
+```bash
+# 1. Install Docker
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 2. Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# 3. Install k3s
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.5+k3s1 sh -s - server \
+  --write-kubeconfig-mode 644 \
+  --disable traefik \
+  --disable servicelb
+
+# 4. Setup KUBECONFIG
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.bashrc
+source ~/.bashrc
+
+# 5. Create namespaces
 kubectl create namespace ricplt
 kubectl create namespace ricxapp
 kubectl create namespace ricobs
+```
 
-# 3. Deploy RIC Infrastructure (Prometheus + Grafana)
+### Deploy (5 Steps)
+
+```bash
+# 1. Clone repository (if not already cloned)
+git clone https://github.com/thc1006/oran-ric-platform.git
+cd oran-ric-platform
+
+# 2. Deploy Prometheus
 helm install r4-infrastructure-prometheus ./ric-dep/helm/infrastructure/subcharts/prometheus \
   --namespace ricplt --values ./config/prometheus-values.yaml
 
+# 3. Deploy Grafana
 helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 helm install oran-grafana grafana/grafana -n ricplt -f ./config/grafana-values.yaml
 
 # 4. Deploy xApps
@@ -63,12 +127,17 @@ kubectl apply -f ./xapps/rc-xapp/deploy/ -n ricxapp
 
 # 5. Deploy E2 Simulator
 bash ./scripts/deployment/deploy-e2-simulator.sh
+```
 
-# 6. Access Grafana
-kubectl port-forward -n ricplt svc/oran-grafana 3000:80 &
-# Get password:
+**Access Grafana:**
+```bash
+# Get admin password
 kubectl get secret --namespace ricplt oran-grafana -o jsonpath="{.data.admin-password}" | base64 --decode && echo
-# Open http://localhost:3000 (username: admin)
+
+# Setup port-forward
+kubectl port-forward -n ricplt svc/oran-grafana 3000:80
+
+# Open http://localhost:3000 (username: admin, password: from above command)
 ```
 
 **Verification:**
