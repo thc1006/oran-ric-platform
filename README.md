@@ -82,24 +82,16 @@ source ~/.bashrc
 
 **Verify installation:**
 ```bash
-kubectl get nodes    # Should show: Ready
-helm version         # Should show version without errors
-```
-
-**Create RIC namespaces:**
-```bash
-kubectl create namespace ricplt
-kubectl create namespace ricxapp
-kubectl create namespace ricobs
+kubectl get nodes              # Should show: Ready
+helm version                   # Should show version without errors
+kubectl get namespaces         # Should show: ricplt, ricxapp, ricobs
+docker ps | grep registry      # Should show: localhost:5000 running
 ```
 
 #### Step 2: Build Images (~10 min, first-time only)
 
 ```bash
-# Setup local registry
-docker run -d --restart=always --name registry -p 5000:5000 registry:2
-
-# Build and push images (see Installation Guide for details)
+# Build and push images to local registry (localhost:5000)
 cd xapps/kpimon-go-xapp && docker build -t localhost:5000/xapp-kpimon:1.0.1 . && docker push localhost:5000/xapp-kpimon:1.0.1 && cd ../..
 cd xapps/traffic-steering && docker build -t localhost:5000/xapp-traffic-steering:1.0.2 . && docker push localhost:5000/xapp-traffic-steering:1.0.2 && cd ../..
 cd xapps/rc-xapp && docker build -t localhost:5000/xapp-ran-control:1.0.1 . && docker push localhost:5000/xapp-ran-control:1.0.1 && cd ../..

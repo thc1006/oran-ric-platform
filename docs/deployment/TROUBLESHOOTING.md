@@ -1,16 +1,121 @@
-# O-RAN RIC xApps Prometheus Metrics 故障排除指南
+# O-RAN RIC Platform 故障排除指南
 
 **作者**: 蔡秀吉 (thc1006)
-**日期**: 2025-11-15
+**最後更新**: 2025-11-16
 
 ## 目錄
 
-1. [xApp Pod 問題](#xapp-pod-問題)
-2. [Metrics 數據問題](#metrics-數據問題)
-3. [E2 Simulator 問題](#e2-simulator-問題)
-4. [Prometheus 問題](#prometheus-問題)
-5. [Grafana 問題](#grafana-問題)
-6. [測試失敗問題](#測試失敗問題)
+1. [🔴 部署關鍵問題（必讀）](#-部署關鍵問題必讀)
+2. [xApp Pod 問題](#xapp-pod-問題)
+3. [Metrics 數據問題](#metrics-數據問題)
+4. [E2 Simulator 問題](#e2-simulator-問題)
+5. [Prometheus 問題](#prometheus-問題)
+6. [Grafana 問題](#grafana-問題)
+7. [測試失敗問題](#測試失敗問題)
+
+---
+
+## 🔴 部署關鍵問題（必讀）
+
+**注意**: 以下問題已在 setup-k3s.sh 腳本中修復（2025-11-16）。如果使用最新版本的腳本，這些問題應該不會發生。
+
+### 問題 1: Cilium CNI CrashLoopBackOff (已修復)
+
+**症狀:**
+```bash
+kubectl get pods -n kube-system
+# cilium-xxx   0/1   CrashLoopBackOff   5
+```
+
+所有其他 pods 卡在 `ContainerCreating` 狀態。
+
+**根本原因:**
+重新安裝 k3s 時，舊的 Cilium iptables 規則（`OLD_CILIUM_*` chains）導致新 Cilium 無法啟動。
+
+**查看日誌確認:**
+```bash
+kubectl logs -n kube-system cilium-xxx | grep "iptables: Bad rule"
+# 如果看到 "iptables: Bad rule (does a matching rule exist in that chain?)" 就是此問題
+```
+
+**解決方案:**
+
+使用最新的 `setup-k3s.sh` 腳本（已包含自動清理）或手動清理：
+
+```bash
+# 清理 iptables 規則
+sudo iptables -t nat -F && sudo iptables -t nat -X
+sudo iptables -t filter -F && sudo iptables -t filter -X
+sudo iptables -t mangle -F && sudo iptables -t mangle -X
+
+# 重啟 Docker（重要！）
+sudo systemctl restart docker
+
+# 重新部署 Cilium
+helm uninstall cilium -n kube-system
+# 然後重新運行 setup-k3s.sh
+```
+
+**參考:** 詳見 [E2E_TESTING_REPORT.md - Bug #1](../E2E_TESTING_REPORT.md#bug-1-cilium-cni-crashloopbackoff-due-to-iptables-conflicts)
+
+### 問題 2: NGINX Ingress 安裝失敗 (已修復)
+
+**症狀:**
+```
+Error: INSTALLATION FAILED: chart "ingress-nginx" matching 1.9.5 not found
+```
+
+**根本原因:**
+腳本使用了不存在的 Helm chart 版本 `1.9.5`。
+
+**解決方案:**
+
+更新到有效版本（已在最新 setup-k3s.sh 中修復為 4.11.8）：
+
+```bash
+# 查詢可用版本
+helm search repo ingress-nginx/ingress-nginx --versions | head -20
+
+# 安裝有效版本
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --version 4.11.8 \
+  --set controller.service.type=LoadBalancer
+```
+
+**參考:** 詳見 [E2E_TESTING_REPORT.md - Bug #2](../E2E_TESTING_REPORT.md#bug-2-invalid-nginx-ingress-chart-version)
+
+### 問題 3: Docker Registry 無法啟動 (已修復)
+
+**症狀:**
+```
+docker: Error response from daemon: failed to set up container networking:
+iptables: No chain/target/match by that name
+```
+
+**根本原因:**
+清理 iptables 後，Docker 的 DOCKER chain 被刪除，導致無法設置端口轉發。
+
+**解決方案:**
+
+重啟 Docker daemon（已在最新 setup-k3s.sh 的 iptables 清理函數中包含）：
+
+```bash
+sudo systemctl restart docker
+sleep 3
+
+# 然後啟動 registry
+docker run -d --restart=always --name registry \
+  -p 5000:5000 -v /var/lib/registry:/var/lib/registry registry:2
+```
+
+**驗證:**
+```bash
+docker ps | grep registry
+# 應該顯示: 0.0.0.0:5000->5000/tcp
+```
+
+**參考:** 詳見 [E2E_TESTING_REPORT.md - Bug #3](../E2E_TESTING_REPORT.md#bug-3-docker-cannot-start-containers-after-iptables-cleanup)
 
 ---
 
