@@ -34,28 +34,50 @@
 - 8+ CPU cores, 16GB+ RAM, 100GB+ disk
 - Helm 3.x, Docker
 
-### Deploy (3 Steps)
+### Deploy (6 Steps)
 
 ```bash
+# 0. Setup environment (k3s users)
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
 # 1. Clone with submodules
 git clone --recurse-submodules https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
 
-# 2. Deploy all xApps + E2 Simulator
-sudo bash scripts/redeploy-xapps-with-metrics.sh
-sudo bash scripts/deployment/deploy-e2-simulator.sh
+# 2. Create namespaces
+kubectl create namespace ricplt
+kubectl create namespace ricxapp
+kubectl create namespace ricobs
 
-# 3. Access Grafana
-kubectl port-forward -n ricplt svc/r4-infrastructure-grafana 3000:80
-# Open http://localhost:3000 (admin / oran-ric-admin)
+# 3. Deploy RIC Infrastructure (Prometheus + Grafana)
+helm install r4-infrastructure-prometheus ./ric-dep/helm/infrastructure/subcharts/prometheus \
+  --namespace ricplt --values ./config/prometheus-values.yaml
+
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install oran-grafana grafana/grafana -n ricplt -f ./config/grafana-values.yaml
+
+# 4. Deploy xApps
+kubectl apply -f ./xapps/kpimon-go-xapp/deploy/ -n ricxapp
+kubectl apply -f ./xapps/traffic-steering/deploy/ -n ricxapp
+kubectl apply -f ./xapps/rc-xapp/deploy/ -n ricxapp
+
+# 5. Deploy E2 Simulator
+bash ./scripts/deployment/deploy-e2-simulator.sh
+
+# 6. Access Grafana
+kubectl port-forward -n ricplt svc/oran-grafana 3000:80 &
+# Get password:
+kubectl get secret --namespace ricplt oran-grafana -o jsonpath="{.data.admin-password}" | base64 --decode && echo
+# Open http://localhost:3000 (username: admin)
 ```
 
 **Verification:**
 ```bash
 kubectl get pods -n ricxapp  # All pods should be Running (1/1)
+kubectl get pods -n ricplt   # Prometheus and Grafana should be Running
 ```
 
-**Detailed guide:** [QUICKSTART.md](docs/deployment/QUICKSTART.md) | **Troubleshooting:** [TROUBLESHOOTING.md](docs/deployment/TROUBLESHOOTING.md)
+**Detailed guide:** [WORKING_DEPLOYMENT_GUIDE.md](docs/deployment/WORKING_DEPLOYMENT_GUIDE.md) | **Troubleshooting:** [TROUBLESHOOTING.md](docs/deployment/TROUBLESHOOTING.md)
 
 ---
 
