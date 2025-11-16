@@ -85,6 +85,13 @@ source ~/.bashrc
 kubectl get nodes    # Should show: Ready
 ```
 
+**Create RIC namespaces:**
+```bash
+kubectl create namespace ricplt
+kubectl create namespace ricxapp
+kubectl create namespace ricobs
+```
+
 #### Step 2: Build Images (~10 min, first-time only)
 
 ```bash
@@ -95,6 +102,8 @@ docker run -d --restart=always --name registry -p 5000:5000 registry:2
 cd xapps/kpimon-go-xapp && docker build -t localhost:5000/xapp-kpimon:1.0.1 . && docker push localhost:5000/xapp-kpimon:1.0.1 && cd ../..
 cd xapps/traffic-steering && docker build -t localhost:5000/xapp-traffic-steering:1.0.2 . && docker push localhost:5000/xapp-traffic-steering:1.0.2 && cd ../..
 cd xapps/rc-xapp && docker build -t localhost:5000/xapp-ran-control:1.0.1 . && docker push localhost:5000/xapp-ran-control:1.0.1 && cd ../..
+cd xapps/qoe-predictor && docker build -t localhost:5000/xapp-qoe-predictor:1.0.0 . && docker push localhost:5000/xapp-qoe-predictor:1.0.0 && cd ../..
+cd xapps/federated-learning && docker build -t localhost:5000/xapp-federated-learning:1.0.0 . && docker push localhost:5000/xapp-federated-learning:1.0.0 && cd ../..
 cd simulator/e2-simulator && docker build -t localhost:5000/e2-simulator:1.0.0 . && docker push localhost:5000/e2-simulator:1.0.0 && cd ../..
 ```
 
@@ -112,9 +121,11 @@ helm install oran-grafana grafana/grafana -n ricplt -f ./config/grafana-values.y
 kubectl apply -f ./xapps/kpimon-go-xapp/deploy/ -n ricxapp
 kubectl apply -f ./xapps/traffic-steering/deploy/ -n ricxapp
 kubectl apply -f ./xapps/rc-xapp/deploy/ -n ricxapp
+kubectl apply -f ./xapps/qoe-predictor/deploy/ -n ricxapp
+kubectl apply -f ./xapps/federated-learning/deploy/ -n ricxapp
 
 # Deploy E2 traffic simulator
-kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml
+kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml -n ricxapp
 ```
 
 #### Step 4: Access Dashboard (~2 min)
@@ -143,6 +154,8 @@ NAME                              READY   STATUS
 kpimon-xxxxx                      1/1     Running
 traffic-steering-xxxxx            1/1     Running
 ran-control-xxxxx                 1/1     Running
+qoe-predictor-xxxxx               1/1     Running
+federated-learning-xxxxx          1/1     Running
 e2-simulator-xxxxx                1/1     Running
 oran-grafana-xxxxx                1/1     Running
 r4-infrastructure-prometheus-xxx  1/1     Running
@@ -287,6 +300,16 @@ cd ../rc-xapp
 docker build -t localhost:5000/xapp-ran-control:1.0.1 .
 docker push localhost:5000/xapp-ran-control:1.0.1
 
+# Build QoE Predictor
+cd ../qoe-predictor
+docker build -t localhost:5000/xapp-qoe-predictor:1.0.0 .
+docker push localhost:5000/xapp-qoe-predictor:1.0.0
+
+# Build Federated Learning
+cd ../federated-learning
+docker build -t localhost:5000/xapp-federated-learning:1.0.0 .
+docker push localhost:5000/xapp-federated-learning:1.0.0
+
 cd ../..
 ```
 
@@ -362,7 +385,7 @@ kubectl apply -f ./xapps/federated-learning/deploy/ -n ricxapp
 #### Deploy E2 Simulator
 
 ```bash
-kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml
+kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml -n ricxapp
 ```
 
 **Verify deployment:**
