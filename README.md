@@ -98,8 +98,8 @@ kubectl apply -f ./xapps/kpimon-go-xapp/deploy/ -n ricxapp
 kubectl apply -f ./xapps/traffic-steering/deploy/ -n ricxapp
 kubectl apply -f ./xapps/rc-xapp/deploy/ -n ricxapp
 
-# Deploy traffic generator
-bash ./scripts/deployment/deploy-e2-simulator.sh
+# Deploy E2 traffic simulator
+kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml
 ```
 
 #### Step 3: Access Dashboard (~2 min)
@@ -294,7 +294,13 @@ kubectl apply -f ./xapps/federated-learning/deploy/ -n ricxapp
 #### Deploy E2 Simulator
 
 ```bash
-bash ./scripts/deployment/deploy-e2-simulator.sh
+kubectl apply -f ./simulator/e2-simulator/deploy/deployment.yaml
+```
+
+**Verify deployment:**
+```bash
+kubectl wait --for=condition=ready pod -l app=e2-simulator -n ricxapp --timeout=60s
+kubectl logs -n ricxapp -l app=e2-simulator --tail=10
 ```
 
 ### Verification Checklist
