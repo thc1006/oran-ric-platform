@@ -80,7 +80,9 @@ git clone https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
 sudo bash scripts/deployment/setup-k3s.sh
 
-# Configure kubectl access (CRITICAL - must run in new shell after setup-k3s.sh)
+# Configure kubectl access (OPTIONAL - for immediate effect in current shell)
+# NOTE: All deployment scripts now automatically detect KUBECONFIG (see v2.0.1)
+# If you open a new shell, .bashrc will load KUBECONFIG automatically
 export KUBECONFIG=$HOME/.kube/config
 source ~/.bashrc
 
@@ -258,7 +260,10 @@ git clone https://github.com/thc1006/oran-ric-platform.git
 cd oran-ric-platform
 sudo bash scripts/deployment/setup-k3s.sh
 
-# Configure kubectl access (CRITICAL - must run after setup-k3s.sh)
+# Configure kubectl access (OPTIONAL - for immediate effect in current shell)
+# NOTE: setup-k3s.sh already configures this and writes to .bashrc
+# All deployment scripts (v2.0.1+) automatically detect KUBECONFIG
+# If you open a new shell, .bashrc will load KUBECONFIG automatically
 mkdir -p $HOME/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
 sudo chown $USER:$USER $HOME/.kube/config
@@ -283,7 +288,9 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.28.5+k3s1 sh -s - server \
   --disable traefik \
   --disable servicelb
 
-# Configure kubectl access (CRITICAL - required for Helm to work!)
+# Configure kubectl access (OPTIONAL - for immediate effect in current shell)
+# NOTE: All deployment scripts (v2.0.1+) automatically detect KUBECONFIG
+# If you open a new shell, .bashrc will load KUBECONFIG automatically
 mkdir -p $HOME/.kube
 sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
 sudo chown $USER:$USER $HOME/.kube/config
