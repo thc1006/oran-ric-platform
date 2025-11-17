@@ -50,7 +50,17 @@ XAPPS=(
     "traffic-steering:traffic-steering:8080"
 )
 
-PROJECT_ROOT="/home/thc1006/oran-ric-platform"
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
 REGISTRY="localhost:5000"
 
 # 統計變數
