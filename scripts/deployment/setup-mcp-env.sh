@@ -6,6 +6,17 @@
 
 set -e
 
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo "[ERROR] Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
 # 顏色定義
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -155,8 +166,8 @@ verify_mcp_config() {
     log_info "驗證 MCP 配置..."
 
     # 檢查 .mcp.json 是否存在
-    if [ ! -f "/home/thc1006/oran-ric-platform/.mcp.json" ]; then
-        log_error ".mcp.json 不存在"
+    if [ ! -f "${PROJECT_ROOT}/.mcp.json" ]; then
+        log_error ".mcp.json 不存在於 ${PROJECT_ROOT}/.mcp.json"
         exit 1
     fi
 
@@ -213,10 +224,12 @@ npx -y playwright-mcp-server --version 2>&1 | head -5
 
 echo ""
 echo "測試 Kubernetes MCP Server..."
-if [ -f "/home/thc1006/.nvm/versions/node/v22.20.0/lib/node_modules/@strowk/mcp-k8s-linux-x64/bin/mcp-k8s-go" ]; then
-    /home/thc1006/.nvm/versions/node/v22.20.0/lib/node_modules/@strowk/mcp-k8s-linux-x64/bin/mcp-k8s-go --version 2>&1 | head -5
+# 動態查找 mcp-k8s-go 二進制文件
+MCP_K8S_BIN="\$(find \$HOME/.nvm/versions/node/*/lib/node_modules/@strowk/mcp-k8s-linux-x64/bin/mcp-k8s-go 2>/dev/null | head -1)"
+if [ -n "\$MCP_K8S_BIN" ] && [ -f "\$MCP_K8S_BIN" ]; then
+    \$MCP_K8S_BIN --version 2>&1 | head -5
 else
-    echo "Kubernetes MCP Server 未安裝"
+    echo "Kubernetes MCP Server 未安裝 (在 \$HOME/.nvm/versions/node/*/lib/node_modules/@strowk/mcp-k8s-linux-x64/bin/ 下找不到)"
 fi
 
 echo ""
@@ -265,7 +278,7 @@ main() {
     log_info "  bash /tmp/test-mcp.sh"
     log_info ""
     log_info "查看完整文檔:"
-    log_info "  cat /home/thc1006/oran-ric-platform/docs/deployment-guides/01-mcp-server-configuration.md"
+    log_info "  cat ${PROJECT_ROOT}/docs/deployment-guides/01-mcp-server-configuration.md"
 }
 
 # 執行主函數
