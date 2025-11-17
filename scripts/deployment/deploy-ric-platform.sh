@@ -1,5 +1,16 @@
 #!/bin/bash
-# Deploy O-RAN Near-RT RIC Platform (J Release)
+# Deploy O-RAN Near-RT RIC Platform (J Release) - Complete Platform
+#
+# Status: EXPERIMENTAL - Not tested with current deployment
+# Use deploy-all.sh for standard lightweight deployment
+#
+# This script deploys the full RIC Platform including:
+# - AppMgr, E2Mgr, E2Term, SubMgr, A1 Mediator
+# - Redis (Shared Data Layer)
+# - RMR routing configuration
+# - Network policies
+#
+# Author: 蔡秀吉 (thc1006)
 
 set -e
 
@@ -15,6 +26,9 @@ HELM_TIMEOUT="600s"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
+# 載入驗證函數庫
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
@@ -22,23 +36,33 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # Check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
+    # KUBECONFIG 標準化設定
+    log_info "設定 KUBECONFIG..."
+    if ! setup_kubeconfig; then
+        log_error "KUBECONFIG not configured. Please run setup-k3s.sh first."
+        exit 1
+    fi
+
     if ! command -v kubectl &> /dev/null; then
         log_error "kubectl not found. Please install kubectl first."
         exit 1
     fi
-    
+
     if ! command -v helm &> /dev/null; then
         log_error "helm not found. Please install helm first."
         exit 1
     fi
-    
+
     if ! kubectl cluster-info &> /dev/null; then
-        log_error "Cannot connect to Kubernetes cluster. Please run setup-k3s.sh first."
+        log_error "Cannot connect to Kubernetes cluster."
+        log_error "KUBECONFIG: $KUBECONFIG"
+        log_error "Please verify your Kubernetes setup."
         exit 1
     fi
-    
+
     log_info "Prerequisites check passed"
+    log_info "Using KUBECONFIG: $KUBECONFIG"
 }
 
 # Add O-RAN SC Helm repository

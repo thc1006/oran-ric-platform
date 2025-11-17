@@ -32,6 +32,7 @@
 ## Table of Contents
 
 **Getting Started**
+- [部署模式選擇](#部署模式選擇) - 選擇適合的部署方式 ⭐
 - [Quick Start](#quick-start) - Deploy in 15 minutes
 - [Installation Guide](#installation-guide) - Detailed setup instructions
 - [Architecture](#architecture) - System overview
@@ -45,6 +46,80 @@
 - [Documentation](#documentation) - Guides and references
 - [What's New](#whats-new-in-v200) - Version 2.0.0 changes
 - [Troubleshooting](docs/deployment/TROUBLESHOOTING.md) - Common issues
+
+---
+
+## 部署模式選擇
+
+本專案提供兩種部署模式，請根據使用場景選擇：
+
+### 🚀 模式 1: 輕量級部署（推薦）⭐
+
+**使用腳本**: `bash scripts/deployment/deploy-all.sh`
+
+**部署組件**:
+- ✅ Prometheus（監控系統）
+- ✅ Grafana（可視化儀表板）
+- ✅ 5 個生產級 xApps（KPIMON, Traffic Steering, RAN Control, QoE Predictor, Federated Learning）
+- ✅ E2 Simulator（測試流量產生器）
+
+**適用場景**:
+- 開發與測試環境
+- xApp 功能開發
+- 監控系統展示
+- CI/CD 整合測試
+- 教學與演示
+
+**優點**:
+- ⚡ 快速部署（~15 分鐘）
+- 💻 資源需求低（8 核 / 16GB RAM）
+- 🔄 獨立運行，不依賴外部 E2 節點
+- 📊 完整監控與可視化
+- ✅ **這是當前推薦的標準部署方式**
+
+**執行方式**:
+```bash
+# 一鍵部署所有組件
+bash scripts/deployment/deploy-all.sh
+```
+
+---
+
+### 🏭 模式 2: 完整 RIC Platform（實驗性）
+
+**使用腳本**: `bash scripts/deployment/deploy-ric-platform.sh`
+
+**額外組件**（在輕量級基礎上增加）:
+- AppMgr（xApp 生命週期管理）
+- E2Mgr（E2 連接管理）
+- E2Term（E2 協議終端）
+- SubMgr（訂閱管理）
+- A1 Mediator（A1 策略介面）
+- Redis（共享資料層 SDL）
+
+**適用場景**:
+- 生產環境部署
+- 真實 E2 節點連接（實體 RAN / CU / DU）
+- A1 Policy 完整測試
+- RMR 訊息路由驗證
+- O-RAN 架構完整驗證
+
+**資源需求**:
+- CPU: 16+ 核心
+- RAM: 32GB+
+- 磁碟: 100GB+
+
+**⚠️ 重要提示**:
+- 此模式標記為 **EXPERIMENTAL**
+- 需要額外配置與調整
+- 未包含在標準部署流程中
+- 適合進階使用者與生產環境準備
+
+**執行方式**:
+```bash
+# 完整 RIC Platform 部署（實驗性）
+bash scripts/deployment/deploy-ric-platform.sh
+```
 
 ---
 

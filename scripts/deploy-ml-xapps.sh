@@ -17,6 +17,9 @@ if [ ! -f "$PROJECT_ROOT/README.md" ]; then
     exit 1
 fi
 
+# 載入驗證函數庫
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -50,6 +53,12 @@ log_error() {
 check_prerequisites() {
     log_info "Checking prerequisites..."
 
+    # KUBECONFIG 標準化設定
+    log_info "設定 KUBECONFIG..."
+    if ! setup_kubeconfig; then
+        exit 1
+    fi
+
     # Check kubectl
     if ! command -v kubectl &> /dev/null; then
         log_error "kubectl not found. Please install kubectl."
@@ -59,6 +68,7 @@ check_prerequisites() {
     # Check cluster connectivity
     if ! kubectl cluster-info &> /dev/null; then
         log_error "Cannot connect to Kubernetes cluster."
+        log_error "KUBECONFIG: $KUBECONFIG"
         exit 1
     fi
 
