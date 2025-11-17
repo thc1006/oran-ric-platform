@@ -1,6 +1,10 @@
 #!/bin/bash
-# Deploy script for O-RAN xApps
+# Deploy xApps Only (不包含 RIC Platform)
+# 作者: 蔡秀吉 (thc1006)
 # Version: 1.0.0
+#
+# 注意: 此腳本僅部署 xApps，不包含 RIC Platform 基礎設施
+# 如需完整部署，請使用: scripts/deployment/deploy-all.sh
 
 set -e
 

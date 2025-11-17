@@ -84,7 +84,7 @@ sudo bash deploy-ric-platform.sh
 
 # 3. 部署 xApps
 cd /home/thc1006/oran-ric-platform/xapps/scripts
-./deploy-all.sh
+./deploy-xapps-only.sh
 ```
 
 **注意**: 快速部署可能會遇到未預期的問題。建議第一次部署時參考詳細的部署指南文件。
