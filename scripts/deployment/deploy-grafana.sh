@@ -16,6 +16,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
 echo "======================================"
@@ -99,7 +110,7 @@ if helm list -n ricplt | grep -q "^oran-grafana"; then
         log_info "升級現有 Grafana..."
         helm upgrade oran-grafana grafana/grafana \
             -n ricplt \
-            -f /home/thc1006/oran-ric-platform/config/grafana-values.yaml \
+            -f "${PROJECT_ROOT}/config/grafana-values.yaml" \
             --wait
         log_info "✓ Grafana 升級完成"
     else
@@ -111,7 +122,7 @@ else
     log_step "部署 Grafana..."
     helm install oran-grafana grafana/grafana \
         -n ricplt \
-        -f /home/thc1006/oran-ric-platform/config/grafana-values.yaml \
+        -f "${PROJECT_ROOT}/config/grafana-values.yaml" \
         --wait \
         --timeout 5m
     log_info "✓ Grafana 部署完成"
