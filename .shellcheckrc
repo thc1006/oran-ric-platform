@@ -1,0 +1,29 @@
+# ShellCheck configuration for O-RAN RIC Platform
+# Author: 蔡秀吉 (thc1006)
+# Date: 2025-11-17
+
+# Shell type
+shell=bash
+
+# Severity level (error, warning, info, style)
+severity=warning
+
+# Disabled checks
+# SC2086: Double quote to prevent globbing and word splitting
+#         (Disabled for kubectl commands that need word splitting)
+disable=SC2086
+
+# SC2181: Check exit code directly with e.g. 'if mycmd;', not indirectly with $?
+#         (Disabled for readability in some cases)
+disable=SC2181
+
+# SC1090: Can't follow non-constant source
+#         (Disabled as we dynamically source config files)
+disable=SC1090
+
+# SC1091: Not following: file not found
+#         (Disabled for sourced files that may not exist during linting)
+disable=SC1091
+
+# Enable optional checks
+enable=require-variable-braces  # 要求變數使用 ${var} 而非 $var

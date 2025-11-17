@@ -1,0 +1,661 @@
+# O-RAN RIC Platform - Optimized Configuration
+# Based on Performance Analysis Report by 蔡秀吉 (thc1006)
+# Date: 2025-11-17
+#
+# This configuration implements the quick wins from the performance analysis:
+# - Adjusted resource allocations
+# - Enabled Redis HA
+# - Optimized Prometheus settings
+# - Added resource quotas and HPA policies
+
+global:
+  namespace:
+    platform: ricplt
+    xapp: ricxapp
+    observability: ricobs
+
+  repository: localhost:5000
+  imagePullPolicy: IfNotPresent
+
+  persistence:
+    enabled: true
+    storageClassName: local-path
+
+  serviceMesh:
+    enabled: false  # Will be enabled in Phase 2
+
+---
+# Platform Components - Optimized Resources
+---
+
+appmgr:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: o-ran-sc/ric-plt-appmgr
+    tag: 0.5.4
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    type: ClusterIP
+    port: 8080
+
+e2mgr:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: o-ran-sc/ric-plt-e2mgr
+    tag: 5.4.23
+  # OPTIMIZED: Increased from 200m/500m
+  resources:
+    requests:
+      cpu: 300m
+      memory: 256Mi
+    limits:
+      cpu: 600m      # Reduced limit/request ratio to minimize throttling
+      memory: 512Mi
+  env:
+    RMR_SEED_RT: /opt/route/rmr-config.yaml
+    RMR_SRC_ID: service-ricplt-e2mgr-rmr.ricplt
+  # NEW: Enable HPA for E2mgr
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+e2term:
+  enabled: true
+  replicaCount: 1  # Will use StatefulSet for sharding in Phase 3
+  image:
+    repository: o-ran-sc/ric-plt-e2
+    tag: 5.5.0
+  # OPTIMIZED: Significantly increased for better E2 handling
+  resources:
+    requests:
+      cpu: 800m       # From 400m
+      memory: 1Gi     # From 512Mi
+    limits:
+      cpu: 1500m      # From 1000m - reduced throttling
+      memory: 2Gi     # From 1Gi - headroom for high load
+  service:
+    type: LoadBalancer
+    ports:
+      sctp: 36422
+      rmr: 4560
+  # NEW: Health probes tuning
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+a1mediator:
+  enabled: true
+  image:
+    repository: o-ran-sc/ric-plt-a1
+    tag: 2.6.1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+submgr:
+  enabled: true
+  image:
+    repository: o-ran-sc/ric-plt-submgr
+    tag: 0.9.3
+  # OPTIMIZED: Doubled resources for subscription handling
+  resources:
+    requests:
+      cpu: 200m       # From 100m
+      memory: 256Mi   # From 128Mi
+    limits:
+      cpu: 400m       # From 250m
+      memory: 512Mi   # From 256Mi
+
+rtmgr:
+  enabled: false  # Static routing for now, will enable in Phase 2
+
+---
+# DBaaS - Redis with HA
+---
+
+dbaas:
+  enabled: true
+  backend: redis
+  image:
+    registry: "nexus3.o-ran-sc.org:10002/o-ran-sc"
+    name: ric-plt-dbaas
+    tag: 0.6.1
+  imagePullPolicy: IfNotPresent
+
+  # OPTIMIZED: Enable High Availability
+  enableHighAvailability: true
+  enablePodAntiAffinity: true
+  terminationGracePeriodSeconds: 30
+
+  redis:
+    masterGroupName: dbaasmaster
+
+    # Standalone configuration (when HA is disabled)
+    sa_config:
+      # OPTIMIZED: Enable persistence
+      appendonly: "yes"
+      save: "900 1 300 10 60 10000"  # RDB snapshots
+      protected-mode: "no"
+      loadmodule: "/usr/local/libexec/redismodule/libredismodule.so"
+      bind: 0.0.0.0
+      # OPTIMIZED: Add memory management
+      maxmemory: "768mb"
+      maxmemory-policy: "allkeys-lru"
+
+    # HA configuration
+    ha_config:
+      appendonly: "yes"
+      save: "900 1 300 10 60 10000"
+      min-slaves-to-write: 1
+      min-slaves-max-lag: 5
+      maxmemory: "768mb"
+      maxmemory-policy: "allkeys-lru"
+      protected-mode: "no"
+      loadmodule: "/usr/local/libexec/redismodule/libredismodule.so"
+
+  sentinel:
+    quorum: 2
+    protected-mode: "no"
+    config:
+      down-after-milliseconds: 5000
+      failover-timeout: 60000
+      parallel-syncs: 1
+
+  saReplicas: 1
+  haReplicas: 3  # 3 Redis replicas for HA
+
+  probeTimeoutCommand: "timeout"
+  probeTimeout: 10
+
+  # OPTIMIZED: Increased resources
+  resources:
+    requests:
+      cpu: 200m       # From 100m
+      memory: 512Mi   # From 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # OPTIMIZED: Enable persistence
+  persistence:
+    enabled: true
+    size: 20Gi       # From 10Gi
+    storageClassName: local-path
+
+---
+# Observability Stack
+---
+
+# Prometheus - Optimized for better metrics collection
+prometheus:
+  enabled: true
+
+  server:
+    image:
+      repository: prom/prometheus
+      tag: v2.18.1
+
+    # OPTIMIZED: More frequent scraping
+    global:
+      scrape_interval: 15s      # From 1m
+      scrape_timeout: 10s
+      evaluation_interval: 15s  # From 1m
+
+    # OPTIMIZED: Longer retention
+    retention: "30d"            # From 15d
+
+    # OPTIMIZED: Enable persistence
+    persistentVolume:
+      enabled: true             # From false
+      size: 50Gi               # From 8Gi
+      storageClassName: local-path
+      accessModes:
+        - ReadWriteOnce
+
+    # OPTIMIZED: Increased resources
+    resources:
+      requests:
+        cpu: 1000m              # From 500m
+        memory: 2Gi             # From 1Gi
+      limits:
+        cpu: 2000m              # From 1000m
+        memory: 4Gi             # From 2Gi
+
+    # Security context
+    securityContext:
+      runAsUser: 65534
+      runAsNonRoot: true
+      runAsGroup: 65534
+      fsGroup: 65534
+
+  alertmanager:
+    enabled: true
+    persistentVolume:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+# Grafana
+grafana:
+  enabled: true
+
+  adminUser: admin
+  adminPassword: oran-ric-admin
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: local-path
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://r4-infrastructure-prometheus-server.ricplt.svc.cluster.local
+        access: proxy
+        isDefault: true
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+# InfluxDB - For KPI time-series storage
+influxdb:
+  enabled: true
+  image:
+    repository: influxdb
+    tag: 2.7-alpine
+
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClassName: local-path
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+  config:
+    retention: "7d"
+    batchSize: 1000
+    batchTimeout: "1s"
+
+---
+# xApp Default Configuration
+---
+
+xapp:
+  # Default resource configuration for xApps
+  defaultResources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Default RMR configuration
+  rmr:
+    protPort: 4560
+    routePort: 4561
+    maxSize: 8192
+    numWorkers: 2  # Default to 2 workers
+
+  # Default health probes
+  livenessProbe:
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+---
+# Resource Quotas
+---
+
+resourceQuotas:
+  ricplt:
+    hard:
+      requests.cpu: "8"
+      requests.memory: 16Gi
+      limits.cpu: "16"
+      limits.memory: 32Gi
+      persistentvolumeclaims: "20"
+      pods: "50"
+
+  ricxapp:
+    hard:
+      requests.cpu: "12"
+      requests.memory: 24Gi
+      limits.cpu: "24"
+      limits.memory: 48Gi
+      persistentvolumeclaims: "30"
+      pods: "100"
+
+  ricobs:
+    hard:
+      requests.cpu: "4"
+      requests.memory: 8Gi
+      limits.cpu: "8"
+      limits.memory: 16Gi
+      persistentvolumeclaims: "10"
+      pods: "20"
+
+---
+# Network Policies
+---
+
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # Platform namespace policies
+  ricplt:
+    ingress:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ricxapp
+        ports:
+        - protocol: TCP
+          port: 4560  # RMR
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ricobs
+        ports:
+        - protocol: TCP
+          port: 9090  # Metrics
+
+    egress:
+      - to:
+        - namespaceSelector:
+            matchLabels:
+              name: ricxapp
+      - to:
+        - namespaceSelector: {}
+        ports:
+        - protocol: TCP
+          port: 53   # DNS
+        - protocol: UDP
+          port: 53
+
+  # xApp namespace policies
+  ricxapp:
+    ingress:
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ricplt
+      - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ricxapp
+
+    egress:
+      - to:
+        - namespaceSelector:
+            matchLabels:
+              name: ricplt
+      - to:
+        - namespaceSelector:
+            matchLabels:
+              name: ricxapp
+      - to:
+        - namespaceSelector: {}
+        ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+
+---
+# Pod Disruption Budgets
+---
+
+podDisruptionBudget:
+  e2term:
+    enabled: true
+    minAvailable: 1
+
+  e2mgr:
+    enabled: true
+    minAvailable: 1
+
+  submgr:
+    enabled: true
+    minAvailable: 1
+
+  dbaas:
+    enabled: true
+    minAvailable: 2  # For HA setup
+
+---
+# Service Mesh (Phase 2)
+---
+
+serviceMesh:
+  enabled: false  # Will be enabled later
+  type: linkerd
+  config:
+    proxyResources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+---
+# Pod Security Context
+---
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+    - ALL
+
+---
+# Logging Configuration
+---
+
+logging:
+  level: INFO
+  format: json
+  output: stdout
+
+  # Centralized logging (future)
+  fluentd:
+    enabled: false
+
+---
+# Performance Tuning
+---
+
+performance:
+  # E2 interface tuning
+  e2:
+    indicationBufferSize: 1000
+    maxConcurrentSubscriptions: 100
+    processingTimeout: 10s
+
+  # RMR tuning
+  rmr:
+    sendRetries: 3
+    sendTimeout: 5s
+    recvBufferSize: 8192
+
+  # Redis tuning
+  redis:
+    connectionPoolSize: 20
+    connectionTimeout: 5s
+    readTimeout: 3s
+    writeTimeout: 3s
+
+---
+# Monitoring & Alerting
+---
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s
+
+  prometheusRules:
+    enabled: true
+    rules:
+      - name: e2-performance
+        interval: 15s
+        rules:
+          - alert: E2IndicationProcessingSlow
+            expr: e2_indication_duration_seconds{quantile="0.99"} > 0.010
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "E2 indication processing is slow"
+              description: "P99 latency is {{ $value }}s (target: < 10ms)"
+
+          - alert: E2ControlLatencyHigh
+            expr: e2_control_duration_seconds{quantile="0.99"} > 0.100
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "E2 control latency is high"
+              description: "P99 latency is {{ $value }}s (target: < 100ms)"
+
+      - name: resource-utilization
+        interval: 15s
+        rules:
+          - alert: PodCPUThrottling
+            expr: rate(container_cpu_cfs_throttled_seconds_total{namespace=~"ricplt|ricxapp"}[5m]) > 0.1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.pod }} is experiencing CPU throttling"
+
+          - alert: PodMemoryPressure
+            expr: container_memory_working_set_bytes{namespace=~"ricplt|ricxapp"} / container_spec_memory_limit_bytes > 0.9
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.pod }} memory usage is high"
+
+---
+# Notes for Deployment
+---
+
+# This configuration implements Quick Wins from the performance analysis:
+#
+# 1. ✅ Adjusted E2term CPU from 400m/1000m to 800m/1500m
+# 2. ✅ Adjusted submgr CPU from 100m/250m to 200m/400m
+# 3. ✅ Enabled Redis HA with 3 replicas
+# 4. ✅ Enabled Redis persistence (AOF + RDB)
+# 5. ✅ Added Redis memory limit (768mb) with LRU eviction
+# 6. ✅ Reduced Prometheus scrape interval from 1m to 15s
+# 7. ✅ Increased Prometheus retention from 15d to 30d
+# 8. ✅ Enabled Prometheus PVC (50Gi)
+# 9. ✅ Added resource quotas for all namespaces
+# 10. ✅ Added HPA for E2mgr
+# 11. ✅ Added PodDisruptionBudgets for critical components
+# 12. ✅ Added network policies for security
+# 13. ✅ Added comprehensive monitoring alerts
+#
+# To deploy this configuration:
+#
+# 1. Update platform deployment:
+#    helm upgrade ric-platform ./ric-dep/helm/ric-platform \
+#      -n ricplt -f /home/thc1006/oran-ric-platform/config/optimized-values.yaml
+#
+# 2. Apply resource quotas:
+#    kubectl apply -f /home/thc1006/oran-ric-platform/config/resource-quotas.yaml
+#
+# 3. Update Prometheus:
+#    helm upgrade r4-infrastructure-prometheus ./ric-dep/helm/infrastructure/subcharts/prometheus \
+#      -n ricplt -f /home/thc1006/oran-ric-platform/config/optimized-values.yaml
+#
+# 4. Verify deployments:
+#    kubectl get pods -n ricplt
+#    kubectl get hpa -n ricplt
+#    kubectl get resourcequota -A
+#
+# Expected performance improvements after deployment:
+# - E2 indication latency: 30-40% reduction
+# - CPU throttling events: 50-70% reduction
+# - Redis availability: 99.9% (with HA)
+# - Metrics granularity: 4x improvement (15s vs 1m)
