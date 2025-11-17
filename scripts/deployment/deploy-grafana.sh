@@ -9,25 +9,24 @@
 
 set -e
 
-# 顏色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
 # 動態解析專案根目錄
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # 驗證專案根目錄
 if [ ! -f "$PROJECT_ROOT/README.md" ]; then
-    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
+    echo "[ERROR] Cannot locate project root" >&2
     echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
     exit 1
 fi
 
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# 載入驗證函數庫
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
+# KUBECONFIG 標準化設定
+if ! setup_kubeconfig; then
+    exit 1
+fi
 
 echo "======================================"
 echo "   O-RAN RIC Grafana 部署"

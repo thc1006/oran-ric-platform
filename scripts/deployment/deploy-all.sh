@@ -42,6 +42,9 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LOG_FILE="/tmp/oran-ric-deploy-$(date +%Y%m%d-%H%M%S).log"
 START_TIME=$(date +%s)
 
+# 載入驗證函數庫（用於 KUBECONFIG 標準化）
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
 # ============================================================================
 # 日誌函數
 # ============================================================================
@@ -177,16 +180,25 @@ configure_kubeconfig() {
 
     info "設定 KUBECONFIG..."
 
-    if [ ! -f "/etc/rancher/k3s/k3s.yaml" ]; then
-        error "k3s 設定檔不存在，請先執行 setup-k3s.sh"
-        exit 1
+    # 先嘗試使用標準化方法（尊重現有環境變數）
+    if setup_kubeconfig 2>/dev/null; then
+        info "使用現有 KUBECONFIG: $KUBECONFIG"
+    else
+        # 如果標準方法失敗，嘗試設置 k3s 配置
+        info "未找到現有配置，設定 k3s KUBECONFIG..."
+
+        if [ ! -f "/etc/rancher/k3s/k3s.yaml" ]; then
+            error "k3s 設定檔不存在，請先執行 setup-k3s.sh"
+            exit 1
+        fi
+
+        mkdir -p $HOME/.kube
+        sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+        sudo chown $USER:$USER $HOME/.kube/config
+
+        export KUBECONFIG=$HOME/.kube/config
+        info "已設定 KUBECONFIG: $KUBECONFIG"
     fi
-
-    mkdir -p $HOME/.kube
-    sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
-    sudo chown $USER:$USER $HOME/.kube/config
-
-    export KUBECONFIG=$HOME/.kube/config
 
     # 驗證
     if kubectl cluster-info &> /dev/null; then

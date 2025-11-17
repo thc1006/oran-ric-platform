@@ -9,14 +9,24 @@
 
 set -e
 
-# 顏色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo "[ERROR] Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
+# 載入驗證函數庫
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
+# KUBECONFIG 標準化設定
+if ! setup_kubeconfig; then
+    exit 1
+fi
 
 echo "=================================================="
 echo "   O-RAN RIC xApps Prometheus Metrics 更新部署"
@@ -25,21 +35,9 @@ echo "   日期: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=================================================="
 echo
 
-# 函數：日誌輸出
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
+# 函數：日誌輸出（使用 validation.sh 的函數）
 log_step() {
-    echo -e "${BLUE}[STEP]${NC} $1"
+    log_info "$1"
 }
 
 # xApp 列表
@@ -49,17 +47,6 @@ XAPPS=(
     "federated-learning:federated-learning:8110"
     "traffic-steering:traffic-steering:8080"
 )
-
-# 動態解析專案根目錄
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-# 驗證專案根目錄
-if [ ! -f "$PROJECT_ROOT/README.md" ]; then
-    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
-    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
-    exit 1
-fi
 
 REGISTRY="localhost:5000"
 

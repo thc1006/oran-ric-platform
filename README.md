@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v2.0.0-blue)](https://github.com/thc1006/oran-ric-platform/releases/tag/v2.0.0)
+[![Version](https://img.shields.io/badge/version-v2.0.1-blue)](https://github.com/thc1006/oran-ric-platform/releases/tag/v2.0.1)
 [![O-RAN SC](https://img.shields.io/badge/O--RAN%20SC-J%20Release-orange)](https://o-ran-sc.org)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326ce5?logo=kubernetes)](https://kubernetes.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
@@ -23,7 +23,9 @@
 
 **Deploy**: Clone → Run deployment script → Access Grafana (15 minutes).
 
-**New in v2.0.0**: E2 Node extracted to [separate repo](https://github.com/thc1006/oran-e2-node), complete metrics integration, 7 alert rule groups, automated testing.
+**New in v2.0.1**: KUBECONFIG standardization with automatic multi-cluster support, improved deployment scripts reliability.
+
+**Previous (v2.0.0)**: E2 Node extracted to [separate repo](https://github.com/thc1006/oran-e2-node), complete metrics integration, 7 alert rule groups, automated testing.
 
 ---
 
@@ -298,6 +300,96 @@ kubectl create namespace ricplt
 kubectl create namespace ricxapp
 kubectl create namespace ricobs
 ```
+
+### KUBECONFIG Configuration
+
+> **New in v2.0.1**: All deployment scripts now use standardized KUBECONFIG handling with automatic detection and multi-cluster support.
+
+#### Automatic KUBECONFIG Setup
+
+All deployment scripts (`scripts/deployment/*.sh`, `scripts/*.sh`) automatically configure KUBECONFIG using a **three-level priority mechanism**:
+
+```bash
+Priority 1: Existing environment variable (if set and file exists)
+Priority 2: Standard location (~/.kube/config)
+Priority 3: k3s default location (/etc/rancher/k3s/k3s.yaml)
+```
+
+**What this means:**
+- **Multi-cluster support**: If you already have `KUBECONFIG` set, all scripts will respect it
+- **Standard compliance**: Scripts prefer `~/.kube/config` (Kubernetes standard)
+- **k3s fallback**: Automatic detection of k3s installations
+- **No manual configuration needed**: Scripts handle everything automatically
+
+#### Usage Examples
+
+**Scenario 1: Single cluster (default)**
+```bash
+# After setup-k3s.sh, KUBECONFIG is automatically configured
+# All deployment scripts will work without any additional configuration
+bash scripts/deployment/deploy-prometheus.sh
+bash scripts/deployment/deploy-grafana.sh
+```
+
+**Scenario 2: Multi-cluster environment**
+```bash
+# Set KUBECONFIG to your preferred cluster
+export KUBECONFIG=/path/to/cluster-a/kubeconfig
+
+# All scripts will use cluster-a
+bash scripts/deployment/deploy-prometheus.sh  # Deploys to cluster-a
+
+# Switch to another cluster
+export KUBECONFIG=/path/to/cluster-b/kubeconfig
+bash scripts/deployment/deploy-grafana.sh     # Deploys to cluster-b
+```
+
+**Scenario 3: Manual configuration (if needed)**
+```bash
+# If automatic detection fails, manually set KUBECONFIG
+export KUBECONFIG=$HOME/.kube/config
+
+# Make it permanent
+echo "export KUBECONFIG=$HOME/.kube/config" >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### Verification
+
+Check which cluster your scripts will use:
+```bash
+# Show current KUBECONFIG
+echo $KUBECONFIG
+
+# Verify cluster access
+kubectl cluster-info
+
+# List available contexts (multi-cluster)
+kubectl config get-contexts
+```
+
+#### Troubleshooting
+
+If deployment scripts fail with KUBECONFIG errors:
+
+```bash
+# Check if KUBECONFIG file exists
+ls -l $KUBECONFIG
+
+# Verify file permissions (must be readable)
+chmod 600 $KUBECONFIG
+
+# Test kubectl connectivity
+kubectl get nodes
+
+# If k3s is installed but KUBECONFIG not found:
+mkdir -p $HOME/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+sudo chown $USER:$USER $HOME/.kube/config
+export KUBECONFIG=$HOME/.kube/config
+```
+
+**Reference:** [PR #9 KUBECONFIG Standardization Report](docs/testing/PR9-FINAL-REPORT.md)
 
 ### Build Container Images
 
@@ -641,7 +733,31 @@ kubectl exec -n ricxapp $POD -- curl -X POST \
 
 ---
 
-## What's New in v2.0.0
+## What's New
+
+### v2.0.1 (Latest)
+
+**KUBECONFIG Standardization**
+- Automatic KUBECONFIG detection with three-level priority mechanism
+- Multi-cluster environment support (respects existing environment variables)
+- All deployment scripts standardized to use centralized validation library
+- Improved reliability and error messages
+- Comprehensive testing (56 tests, 100% pass rate)
+
+**Scripts Updated:**
+- `scripts/lib/validation.sh` - Added `setup_kubeconfig()` function
+- `scripts/deployment/deploy-prometheus.sh`
+- `scripts/deployment/deploy-grafana.sh`
+- `scripts/deployment/deploy-e2-simulator.sh`
+- `scripts/verify-all-xapps.sh`
+- `scripts/redeploy-xapps-with-metrics.sh`
+- `scripts/deployment/deploy-all.sh` - Smart dual-check mechanism
+
+**Documentation:**
+- [PR #9 KUBECONFIG Standardization Report](docs/testing/PR9-FINAL-REPORT.md)
+- Updated README.md with KUBECONFIG configuration guide
+
+### v2.0.0
 
 ### Major Changes
 

@@ -14,13 +14,6 @@
 
 set -e
 
-# 顏色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
 # 配置變數
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
@@ -29,7 +22,13 @@ VALUES_FILE="${PROJECT_ROOT}/config/prometheus-values.yaml"
 RELEASE_NAME="r4-infrastructure-prometheus"
 NAMESPACE="ricplt"
 
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+# 載入驗證函數庫
+source "${PROJECT_ROOT}/scripts/lib/validation.sh"
+
+# KUBECONFIG 標準化設定
+if ! setup_kubeconfig; then
+    exit 1
+fi
 
 echo "=================================================="
 echo "   O-RAN RIC Prometheus 監控部署"
@@ -57,23 +56,15 @@ log_step() {
 
 # 檢查前置條件
 check_prerequisites() {
-    log_step "檢查前置條件..."
+    log_info "檢查前置條件..."
 
     # 檢查 kubectl
-    if ! command -v kubectl &> /dev/null; then
-        log_error "kubectl 命令未找到，請先安裝 kubectl"
+    if ! validate_command_exists "kubectl" "kubectl" "sudo snap install kubectl --classic"; then
         exit 1
     fi
 
     # 檢查 helm
-    if ! command -v helm &> /dev/null; then
-        log_error "helm 命令未找到，請先安裝 Helm"
-        exit 1
-    fi
-
-    # 檢查 kubeconfig
-    if [ ! -f "$KUBECONFIG" ]; then
-        log_error "KUBECONFIG 檔案不存在: $KUBECONFIG"
+    if ! validate_command_exists "helm" "Helm" "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"; then
         exit 1
     fi
 
