@@ -6,6 +6,17 @@
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo -e "\033[0;31m[ERROR]\033[0m Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -65,25 +76,21 @@ build_images() {
 
     # Build QoE Predictor
     log_info "Building QoE Predictor image..."
-    cd xapps/qoe-predictor
-    if [ -f "Dockerfile.optimized" ]; then
-        docker build -f Dockerfile.optimized -t ${QOE_IMAGE} .
+    if [ -f "${PROJECT_ROOT}/xapps/qoe-predictor/Dockerfile.optimized" ]; then
+        docker build -f "${PROJECT_ROOT}/xapps/qoe-predictor/Dockerfile.optimized" -t ${QOE_IMAGE} "${PROJECT_ROOT}/xapps/qoe-predictor"
     else
-        docker build -t ${QOE_IMAGE} .
+        docker build -t ${QOE_IMAGE} "${PROJECT_ROOT}/xapps/qoe-predictor"
     fi
     docker push ${QOE_IMAGE}
-    cd ../..
 
     # Build Federated Learning
     log_info "Building Federated Learning image..."
-    cd xapps/federated-learning
-    if [ -f "Dockerfile.optimized" ]; then
-        docker build -f Dockerfile.optimized -t ${FL_IMAGE} .
+    if [ -f "${PROJECT_ROOT}/xapps/federated-learning/Dockerfile.optimized" ]; then
+        docker build -f "${PROJECT_ROOT}/xapps/federated-learning/Dockerfile.optimized" -t ${FL_IMAGE} "${PROJECT_ROOT}/xapps/federated-learning"
     else
-        docker build -t ${FL_IMAGE} .
+        docker build -t ${FL_IMAGE} "${PROJECT_ROOT}/xapps/federated-learning"
     fi
     docker push ${FL_IMAGE}
-    cd ../..
 
     log_success "Docker images built and pushed"
 }
@@ -91,15 +98,13 @@ build_images() {
 deploy_qoe_predictor() {
     log_info "Deploying QoE Predictor xApp..."
 
-    cd xapps/qoe-predictor/deploy
+    local DEPLOY_DIR="${PROJECT_ROOT}/xapps/qoe-predictor/deploy"
 
     # Apply configurations
-    kubectl apply -f serviceaccount.yaml
-    kubectl apply -f configmap.yaml
-    kubectl apply -f service.yaml
-    kubectl apply -f deployment.yaml
-
-    cd ../../..
+    kubectl apply -f "${DEPLOY_DIR}/serviceaccount.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/configmap.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/service.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/deployment.yaml"
 
     log_success "QoE Predictor deployed"
 }
@@ -107,16 +112,14 @@ deploy_qoe_predictor() {
 deploy_federated_learning() {
     log_info "Deploying Federated Learning xApp..."
 
-    cd xapps/federated-learning/deploy
+    local DEPLOY_DIR="${PROJECT_ROOT}/xapps/federated-learning/deploy"
 
     # Apply configurations
-    kubectl apply -f pvc.yaml
-    kubectl apply -f serviceaccount.yaml
-    kubectl apply -f configmap.yaml
-    kubectl apply -f service.yaml
-    kubectl apply -f deployment.yaml
-
-    cd ../../..
+    kubectl apply -f "${DEPLOY_DIR}/pvc.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/serviceaccount.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/configmap.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/service.yaml"
+    kubectl apply -f "${DEPLOY_DIR}/deployment.yaml"
 
     log_success "Federated Learning deployed"
 }
