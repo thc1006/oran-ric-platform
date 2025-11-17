@@ -10,14 +10,26 @@
 set -e
 
 # 顏色定義
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
+
 GRAFANA_URL="http://localhost:3000"
 GRAFANA_USER="admin"
 GRAFANA_PASS="oran-ric-admin"
-DASHBOARD_DIR="/home/thc1006/oran-ric-platform/config/dashboards"
+DASHBOARD_DIR="${PROJECT_ROOT}/config/dashboards"
 
 echo "======================================"
 echo "   Grafana Dashboard 匯入"

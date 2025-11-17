@@ -18,7 +18,16 @@ NC='\033[0m'
 
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-PROJECT_ROOT="/home/thc1006/oran-ric-platform"
+# 動態解析專案根目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# 驗證專案根目錄
+if [ ! -f "$PROJECT_ROOT/README.md" ]; then
+    echo -e "${RED}[ERROR]${NC} Cannot locate project root" >&2
+    echo "Expected README.md at: $PROJECT_ROOT/README.md" >&2
+    exit 1
+fi
 SIMULATOR_DIR="${PROJECT_ROOT}/simulator/e2-simulator"
 REGISTRY="localhost:5000"
 
