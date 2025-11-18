@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: ran-control
-        image: localhost:5000/xapp-ran-control:1.0.0
+        image: localhost:5000/xapp-ran-control:1.0.1
         imagePullPolicy: Always
         env:
         - name: RMR_SEED_RT
