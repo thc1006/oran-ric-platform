@@ -404,8 +404,19 @@ deploy_xapps() {
     for xapp in "${xapps[@]}"; do
         step "部署 xApp: $xapp"
 
+        # 映射邏輯名稱到實際目錄名稱
+        local xapp_dir="$xapp"
+        case "$xapp" in
+            "kpimon")
+                xapp_dir="kpimon-go-xapp"
+                ;;
+            "ran-control")
+                xapp_dir="rc-xapp"
+                ;;
+        esac
+
         # 構建 Docker 映像
-        cd "$PROJECT_ROOT/xapps/$xapp"
+        cd "$PROJECT_ROOT/xapps/$xapp_dir"
         docker build -t localhost:5000/xapp-$xapp:latest .
         docker push localhost:5000/xapp-$xapp:latest
 
